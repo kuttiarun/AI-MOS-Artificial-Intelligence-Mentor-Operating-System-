@@ -1,14 +1,8 @@
 """
 AI-MOS Backend — Progress and Weakness Database Selectors & Mutations
 =======================================================================
-Contains asynchronous database query and update operations utilizing
-SQLAlchemy 2.0 select and insert/update statements.
-
-Now includes writing operations (Phase 4):
-- upsert_user_progress: inserts/updates a student's node progress state.
-- record_validation_failure: increments failure count on concept weakness.
-- resolve_weakness_record: marks active weakness as resolved.
-- unlock_next_nodes: unlocks child nodes dependent on a prerequisite node.
+Contains SQLAlchemy 2.0 ORM models and asynchronous database query
+and update operations.
 """
 
 import logging
@@ -24,45 +18,43 @@ from app.core.database import Base
 logger = logging.getLogger(__name__)
 
 # =============================================================================
-# Models Mappings
+# ORM Models (Declared correctly inside class bodies)
 # =============================================================================
 
 class User(Base):
     __tablename__ = "users"
+    id = sa.Column("id", sa.UUID, primary_key=True)
+    email = sa.Column("email", sa.String, nullable=False, unique=True)
+    password_hash = sa.Column("password_hash", sa.String, nullable=False)
+    target_role = sa.Column("target_role", sa.String)
+    operating_system = sa.Column("operating_system", sa.String, nullable=False)
+
 
 class CurriculumNode(Base):
     __tablename__ = "curriculum_nodes"
+    id = sa.Column("id", sa.String, primary_key=True)
+    title = sa.Column("title", sa.String, nullable=False)
+    phase = sa.Column("phase", sa.Integer, nullable=False)
+    prerequisite_id = sa.Column("prerequisite_id", sa.String, nullable=True)
+    content_path = sa.Column("content_path", sa.String, nullable=False)
+
 
 class UserProgress(Base):
     __tablename__ = "user_progress"
+    id = sa.Column("id", sa.BigInteger, primary_key=True)
+    user_id = sa.Column("user_id", sa.UUID, nullable=False)
+    node_id = sa.Column("node_id", sa.String, nullable=False)
+    status = sa.Column("status", sa.String, nullable=False, default="locked")
+    confidence_score = sa.Column("confidence_score", sa.Integer, default=0)
+
 
 class WeakArea(Base):
     __tablename__ = "weak_areas"
-
-# Define mappings explicitly
-User.id = sa.Column("id", sa.UUID, primary_key=True)
-User.email = sa.Column("email", sa.String)
-User.password_hash = sa.Column("password_hash", sa.String)
-User.target_role = sa.Column("target_role", sa.String)
-User.operating_system = sa.Column("operating_system", sa.String)
-
-CurriculumNode.id = sa.Column("id", sa.String, primary_key=True)
-CurriculumNode.title = sa.Column("title", sa.String)
-CurriculumNode.phase = sa.Column("phase", sa.Integer)
-CurriculumNode.prerequisite_id = sa.Column("prerequisite_id", sa.String)
-CurriculumNode.content_path = sa.Column("content_path", sa.String)
-
-UserProgress.id = sa.Column("id", sa.BigInteger, primary_key=True)
-UserProgress.user_id = sa.Column("user_id", sa.UUID)
-UserProgress.node_id = sa.Column("node_id", sa.String)
-UserProgress.status = sa.Column("status", sa.String)
-UserProgress.confidence_score = sa.Column("confidence_score", sa.Integer)
-
-WeakArea.id = sa.Column("id", sa.BigInteger, primary_key=True)
-WeakArea.user_id = sa.Column("user_id", sa.UUID)
-WeakArea.node_id = sa.Column("node_id", sa.String)
-WeakArea.failure_count = sa.Column("failure_count", sa.Integer)
-WeakArea.review_status = sa.Column("review_status", sa.String)
+    id = sa.Column("id", sa.BigInteger, primary_key=True)
+    user_id = sa.Column("user_id", sa.UUID, nullable=False)
+    node_id = sa.Column("node_id", sa.String, nullable=False)
+    failure_count = sa.Column("failure_count", sa.Integer, nullable=False, default=1)
+    review_status = sa.Column("review_status", sa.String, nullable=False, default="active")
 
 
 # =============================================================================
@@ -129,7 +121,7 @@ async def get_curriculum_node(db: AsyncSession, node_id: str) -> Optional[Curric
 
 
 # =============================================================================
-# Async Database Mutation Helpers (Phase 4)
+# Async Database Mutation Helpers
 # =============================================================================
 
 async def upsert_user_progress(
@@ -139,10 +131,6 @@ async def upsert_user_progress(
     status: str,
     confidence_score: int
 ) -> UserProgress:
-    """
-    Inserts a user_progress record or updates it if one already exists
-    for the given user_id / node_id combination.
-    """
     existing = await get_user_node_progress(db, user_id, node_id)
     if existing:
         existing.status = status
@@ -162,10 +150,6 @@ async def upsert_user_progress(
 
 
 async def record_validation_failure(db: AsyncSession, user_id: UUID, node_id: str) -> WeakArea:
-    """
-    Increments failure count of an active weakness record for the user/node.
-    If no weakness record exists, inserts a new one with failure_count = 1.
-    """
     existing = await get_node_weakness(db, user_id, node_id)
     if existing:
         existing.failure_count += 1
@@ -184,9 +168,6 @@ async def record_validation_failure(db: AsyncSession, user_id: UUID, node_id: st
 
 
 async def resolve_weakness_record(db: AsyncSession, user_id: UUID, node_id: str) -> None:
-    """
-    Marks an active weakness record as 'resolved'. Does nothing if no active weakness exists.
-    """
     stmt = (
         update(WeakArea)
         .where(
@@ -201,19 +182,12 @@ async def resolve_weakness_record(db: AsyncSession, user_id: UUID, node_id: str)
 
 
 async def unlock_next_nodes(db: AsyncSession, user_id: UUID, completed_node_id: str) -> List[UserProgress]:
-    """
-    Identifies all curriculum nodes that have completed_node_id as their prerequisite_id.
-    Inserts/updates their status in user_progress to 'unlocked'.
-    """
-    # 1. Query child nodes
     stmt = select(CurriculumNode).where(CurriculumNode.prerequisite_id == completed_node_id)
     result = await db.execute(stmt)
     child_nodes = result.scalars().all()
 
     unlocked_records = []
-    # 2. Upsert status to unlocked for each child
     for node in child_nodes:
-        # Check if already completed/unlocked to avoid resetting status back to unlocked
         existing = await get_user_node_progress(db, user_id, node.id)
         if existing and existing.status in ("completed", "in_progress"):
             continue

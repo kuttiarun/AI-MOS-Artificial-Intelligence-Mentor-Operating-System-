@@ -3,7 +3,8 @@ import { CurriculumTree } from "./components/CurriculumTree";
 import { LessonCanvas } from "./components/LessonCanvas";
 import { SocraticConsole } from "./components/SocraticConsole";
 import { BYOKModal } from "./components/BYOKModal";
-import { useLlmStream, Message } from "./hooks/useLlmStream";
+import { useLlmStream } from "./hooks/useLlmStream";
+import type { Message } from "./hooks/useLlmStream";
 
 function App() {
   const [activeNodeId, setActiveNodeId] = useState("java-collections-hashmap");

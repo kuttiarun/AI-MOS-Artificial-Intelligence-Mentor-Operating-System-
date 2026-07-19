@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Send, Key, Cpu, AlertTriangle } from "lucide-react";
-import { Message } from "../hooks/useLlmStream";
+import type { Message } from "../hooks/useLlmStream";
 
 interface SocraticConsoleProps {
   messages: Message[];
