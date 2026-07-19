@@ -1,0 +1,62 @@
+# =============================================================================
+# AI-MOS — Docker Compose Configuration
+# Provides a portable, reproducible PostgreSQL database for local development.
+# Usage: docker compose up -d
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 — Primary relational datastore
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: aimos_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aimos_db}
+      POSTGRES_USER: ${POSTGRES_USER:-aimos_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aimos_password}
+    ports:
+      # Expose on localhost only — never bind 0.0.0.0 in development
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # Named volume persists data across container restarts
+      - aimos_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aimos_user} -d ${POSTGRES_DB:-aimos_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # pgAdmin 4 (optional) — Web-based DB administration UI
+  # Access at: http://localhost:5050
+  # Default login: admin@aimos.dev / admin
+  # ---------------------------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: aimos_pgadmin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@aimos.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "127.0.0.1:5050:80"
+    volumes:
+      - aimos_pgadmin_data:/var/lib/pgadmin
+
+# =============================================================================
+# Named volumes for data persistence
+# =============================================================================
+volumes:
+  aimos_postgres_data:
+    driver: local
+  aimos_pgadmin_data:
+    driver: local
