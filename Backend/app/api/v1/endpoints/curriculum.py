@@ -22,11 +22,15 @@ from app.services.evaluator import SocraticEvaluator
 from app.services.progress import (
     get_or_create_test_user,
     get_curriculum_node,
+    get_user_node_progress,
     upsert_user_progress,
     unlock_next_nodes,
     resolve_weakness_record,
     record_validation_failure,
+    CurriculumNode,
+    UserProgress,
 )
+from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +45,13 @@ class NodeContentResponse(BaseModel):
     id: str
     title: str
     content: str
+
+
+class NodeProgressItem(BaseModel):
+    id: str
+    title: str
+    phase: int
+    status: str  # "locked" | "unlocked" | "in_progress" | "completed"
 
 
 class ValidateRequest(BaseModel):
@@ -88,6 +99,59 @@ async def get_node_contents(
         title=node.title,
         content=content,
     )
+
+
+# =============================================================================
+# GET /progress
+# =============================================================================
+@router.get(
+    "/progress",
+    summary="Get Full Curriculum Progress for User",
+    response_model=list[NodeProgressItem],
+    tags=["Curriculum"],
+)
+async def get_curriculum_progress(
+    x_user_id: str | None = Header(default=None, alias="X-User-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> list[NodeProgressItem]:
+    """
+    Returns all curriculum nodes with the requesting user's live progress
+    status. Used by the CurriculumTree frontend component to render live
+    node state (locked / unlocked / in_progress / completed).
+    """
+    # Resolve user UUID
+    user_uuid = None
+    if x_user_id:
+        try:
+            user_uuid = UUID(x_user_id.strip())
+        except ValueError:
+            logger.warning("Invalid X-User-Id in progress request: '%s'. Using test user.", x_user_id)
+    if not user_uuid:
+        user_uuid = await get_or_create_test_user(db)
+
+    # Fetch all curriculum nodes ordered by phase
+    nodes_result = await db.execute(
+        select(CurriculumNode).order_by(CurriculumNode.phase, CurriculumNode.id)
+    )
+    all_nodes = nodes_result.scalars().all()
+
+    # Fetch all progress records for this user in one query
+    progress_result = await db.execute(
+        select(UserProgress).where(UserProgress.user_id == user_uuid)
+    )
+    progress_records = {p.node_id: p.status for p in progress_result.scalars().all()}
+
+    # Build response — default to 'locked' for nodes with no progress record
+    result = [
+        NodeProgressItem(
+            id=node.id,
+            title=node.title,
+            phase=node.phase,
+            status=progress_records.get(node.id, "locked"),
+        )
+        for node in all_nodes
+    ]
+    return result
 
 
 # =============================================================================
@@ -157,8 +221,8 @@ async def validate_node_submission(
     # 4. Database Transaction Update Loop (Single Transaction Safety)
     # -------------------------------------------------------------------------
     try:
-        # Wrap all updates in db.begin() to guarantee transaction isolation rollback
-        async with db.begin():
+        # Wrap all updates in db.begin() only if a transaction is not already active
+        if db.in_transaction():
             if passed:
                 # Upgrading node to completed status
                 await upsert_user_progress(db, user_uuid, request.node_id, "completed", score)
@@ -176,6 +240,25 @@ async def validate_node_submission(
                 await record_validation_failure(db, user_uuid, request.node_id)
                 
                 next_node_id = None
+        else:
+            async with db.begin():
+                if passed:
+                    # Upgrading node to completed status
+                    await upsert_user_progress(db, user_uuid, request.node_id, "completed", score)
+                    # Unlocking dependents/child nodes
+                    unlocked_nodes = await unlock_next_nodes(db, user_uuid, request.node_id)
+                    # Resolving any active weaknesses on this topic
+                    await resolve_weakness_record(db, user_uuid, request.node_id)
+                    
+                    # Determine next node to unlock (if any)
+                    next_node_id = unlocked_nodes[0].node_id if unlocked_nodes else None
+                else:
+                    # Setting node to active studying state
+                    await upsert_user_progress(db, user_uuid, request.node_id, "in_progress", score)
+                    # Logging weakness parameters or failure count
+                    await record_validation_failure(db, user_uuid, request.node_id)
+                    
+                    next_node_id = None
 
     except Exception as exc:
         logger.error("Database transaction failed during checkpoint validate: %s", str(exc))

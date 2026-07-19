@@ -14,9 +14,19 @@ Adding a new module in Phase 2+:
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, curriculum, gateway
+from app.api.v1.endpoints import auth, curriculum, gateway, interview, onboarding, analytics
 
 api_router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Analytics — Ingestion and Reporting
+# All routes: /api/v1/analytics/*
+# ---------------------------------------------------------------------------
+api_router.include_router(
+    analytics.router,
+    prefix="/analytics",
+    tags=["Analytics"],
+)
 
 # ---------------------------------------------------------------------------
 # Gateway — BYOK AI Streaming (MOD-04)
@@ -46,4 +56,24 @@ api_router.include_router(
     curriculum.router,
     prefix="/curriculum",
     tags=["Curriculum"],
+)
+
+# ---------------------------------------------------------------------------
+# Mock Interview — Zoho Technical Panel Simulator
+# All routes: /api/v1/interview/*
+# ---------------------------------------------------------------------------
+api_router.include_router(
+    interview.router,
+    prefix="/interview",
+    tags=["Mock Interview"],
+)
+
+# ---------------------------------------------------------------------------
+# Onboarding — Module 01 Diagnostic & Profile Matrix Engine
+# All routes: /api/v1/onboarding/*
+# ---------------------------------------------------------------------------
+api_router.include_router(
+    onboarding.router,
+    prefix="/onboarding",
+    tags=["Onboarding"],
 )

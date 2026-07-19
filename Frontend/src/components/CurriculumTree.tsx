@@ -1,5 +1,5 @@
-import React from "react";
-import { Lock, CheckCircle2, PlayCircle, BookOpen } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Lock, CheckCircle2, PlayCircle, BookOpen, RefreshCw } from "lucide-react";
 
 export interface NodeItem {
   id: string;
@@ -13,20 +13,20 @@ interface CurriculumTreeProps {
   onSelectNode: (id: string) => void;
 }
 
-// Full Java study roadmap matching initial schema migration seeds
-const CURRICULUM_ROADMAP: NodeItem[] = [
+// Fallback roadmap used only when the backend is unreachable (dev offline mode)
+const FALLBACK_ROADMAP: NodeItem[] = [
   // Phase 1: Foundations
-  { id: "foundations-intro", title: "Intro to SE", phase: 1, status: "completed" },
-  { id: "foundations-how-computers-work", title: "How CPUs Work", phase: 1, status: "completed" },
-  { id: "foundations-programming-basics", title: "Programming Logic", phase: 1, status: "completed" },
+  { id: "foundations-intro", title: "Intro to SE", phase: 1, status: "locked" },
+  { id: "foundations-how-computers-work", title: "How CPUs Work", phase: 1, status: "locked" },
+  { id: "foundations-programming-basics", title: "Programming Logic", phase: 1, status: "locked" },
   // Phase 2: Java Core
-  { id: "java-core-setup", title: "Java Setup & JVM", phase: 2, status: "completed" },
-  { id: "java-core-oop-classes", title: "Classes & Objects", phase: 2, status: "completed" },
-  { id: "java-core-oop-inheritance", title: "OOP Inheritance", phase: 2, status: "completed" },
+  { id: "java-core-setup", title: "Java Setup & JVM", phase: 2, status: "locked" },
+  { id: "java-core-oop-classes", title: "Classes & Objects", phase: 2, status: "locked" },
+  { id: "java-core-oop-inheritance", title: "OOP Inheritance", phase: 2, status: "locked" },
   { id: "java-core-interface", title: "Interfaces", phase: 2, status: "in_progress" },
-  { id: "java-core-abstract-class", title: "Abstract Classes", phase: 2, status: "unlocked" },
+  { id: "java-core-abstract-class", title: "Abstract Classes", phase: 2, status: "locked" },
   // Phase 3: Java Collections
-  { id: "java-collections-arrays", title: "Arrays & Memory", phase: 3, status: "unlocked" },
+  { id: "java-collections-arrays", title: "Arrays & Memory", phase: 3, status: "locked" },
   { id: "java-collections-arraylist", title: "ArrayList Internals", phase: 3, status: "locked" },
   { id: "java-collections-linkedlist", title: "LinkedList Nodes", phase: 3, status: "locked" },
   { id: "java-collections-hashmap", title: "HashMap Buckets", phase: 3, status: "locked" },
@@ -36,6 +36,40 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
   activeNodeId,
   onSelectNode,
 }) => {
+  const [nodes, setNodes] = useState<NodeItem[]>(FALLBACK_ROADMAP);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchProgress = useCallback(async () => {
+    setIsLoading(true);
+    const userId = localStorage.getItem("aimos_user_id");
+    try {
+      const response = await fetch("http://localhost:8000/api/v1/curriculum/progress", {
+        headers: {
+          ...(userId ? { "X-User-Id": userId } : {}),
+        },
+      });
+      if (response.ok) {
+        const data: NodeItem[] = await response.json();
+        setNodes(data);
+      }
+      // If not OK (e.g. DB not connected), keep the fallback silently
+    } catch {
+      // Backend unreachable — fallback roadmap stays in place
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Fetch on mount
+  useEffect(() => {
+    fetchProgress();
+  }, [fetchProgress]);
+
+  // Re-fetch whenever the active node changes (a validation pass may have unlocked a new node)
+  useEffect(() => {
+    fetchProgress();
+  }, [activeNodeId, fetchProgress]);
+
   const phases = [1, 2, 3];
 
   const getStatusIcon = (status: string) => {
@@ -68,10 +102,23 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
     <div className="flex h-full flex-col bg-slate-900/80 border-r border-slate-800 text-slate-100 select-none">
       {/* Title Header */}
       <div className="border-b border-slate-800 p-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-          Learning Path
-        </h3>
-        <p className="text-[10px] text-slate-500 mt-0.5">Java Developer Syllabus</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400">
+              Learning Path
+            </h3>
+            <p className="text-[10px] text-slate-500 mt-0.5">Java Developer Syllabus</p>
+          </div>
+          {/* Refresh button */}
+          <button
+            onClick={fetchProgress}
+            disabled={isLoading}
+            className="rounded p-1 text-slate-600 hover:text-slate-400 transition-colors"
+            title="Refresh progress"
+          >
+            <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} />
+          </button>
+        </div>
       </div>
 
       {/* Nodes list */}
@@ -83,7 +130,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
             </h4>
 
             <div className="space-y-1">
-              {CURRICULUM_ROADMAP.filter((node) => node.phase === phase).map((node) => {
+              {nodes.filter((node) => node.phase === phase).map((node) => {
                 const isActive = node.id === activeNodeId;
                 const isLocked = node.status === "locked";
 

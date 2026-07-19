@@ -1,0 +1,74 @@
+# =============================================================================
+# AI-MOS — Production Docker Compose Configuration
+# Orchestrates PostgreSQL, FastAPI backend workers, and Nginx frontend.
+# Usage: docker compose -f docker-compose.prod.yml up -d --build
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Database Service — Isolated Relational Datastore
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: aimos_prod_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aimos_db}
+      POSTGRES_USER: ${POSTGRES_USER:-aimos_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aimos_password}
+    # No ports exposed to the host network — fully isolated database
+    expose:
+      - "5432"
+    volumes:
+      - aimos_prod_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aimos_user} -d ${POSTGRES_DB:-aimos_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Backend Service — FastAPI workers
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Backend/Dockerfile
+    container_name: aimos_prod_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: "production"
+      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-aimos_user}:${POSTGRES_PASSWORD:-aimos_password}@db:5432/${POSTGRES_DB:-aimos_db}"
+      SECRET_KEY: ${SECRET_KEY:-aimos_production_secret_key_change_me_in_env_file_12345}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+    ports:
+      # Expose port 8000 for browser client-side direct API integration
+      - "8000:8000"
+
+  # ---------------------------------------------------------------------------
+  # Frontend Service — Nginx static asset server
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: aimos_prod_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      # Binds public web traffic to standard HTTP port
+      - "80:80"
+
+# =============================================================================
+# Production Named Volumes for Data Persistence
+# =============================================================================
+volumes:
+  aimos_prod_postgres_data:
+    driver: local

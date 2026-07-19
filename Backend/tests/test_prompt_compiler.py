@@ -27,7 +27,7 @@ def test_base_socratic_prompt_structure():
     # Assert base Socratic guidelines are present
     assert "You are the AI-MOS software engineering mentor." in compiled
     assert "Socratic coaching style" in compiled
-    assert "explain the 'why' before the 'how'" in compiled
+    assert "Explain the 'why' before the 'how'" in compiled
 
     # Assert lesson text is present
     assert "This is a lesson about Polymorphism in Java." in compiled

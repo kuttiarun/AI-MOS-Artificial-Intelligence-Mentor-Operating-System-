@@ -12,6 +12,7 @@ Production:
 """
 
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,6 +32,21 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # FastAPI Application Instance
 # =============================================================================
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    """
+    FastAPI lifespan context manager — replaces deprecated on_event handlers.
+    Code before `yield` runs on startup; code after `yield` runs on shutdown.
+    """
+    logger.info(
+        "AI-MOS Gateway starting up | environment=%s | cors_origins=%s",
+        settings.ENVIRONMENT,
+        settings.CORS_ORIGINS,
+    )
+    yield
+    logger.info("AI-MOS Gateway shutting down gracefully.")
+
+
 app = FastAPI(
     title="AI-MOS Gateway",
     description=(
@@ -50,6 +66,7 @@ app = FastAPI(
     license_info={
         "name": "Proprietary",
     },
+    lifespan=lifespan,
 )
 
 # =============================================================================
@@ -68,6 +85,7 @@ app.add_middleware(
         "Content-Type",
         "X-User-API-Key",    # BYOK header (SRS §3)
         "X-User-Provider",   # Provider selector header (SRS §3)
+        "X-User-Id",         # Student User ID header
         "Accept",
         "Origin",
     ],
@@ -84,32 +102,6 @@ app.add_middleware(
 # All v1 routes are mounted under /api/v1.
 # The api_router in app/api/v1/api.py aggregates all sub-routers.
 app.include_router(api_router, prefix="/api/v1")
-
-# =============================================================================
-# Startup / Shutdown Events
-# =============================================================================
-@app.on_event("startup")
-async def on_startup() -> None:
-    """
-    Executes on application startup.
-    TODO (Phase 2): Add connection pool warm-up here.
-    TODO (Phase 3): Validate database connectivity on boot.
-    """
-    logger.info(
-        "AI-MOS Gateway starting up | environment=%s | cors_origins=%s",
-        settings.ENVIRONMENT,
-        settings.CORS_ORIGINS,
-    )
-
-
-@app.on_event("shutdown")
-async def on_shutdown() -> None:
-    """
-    Executes on graceful application shutdown.
-    TODO (Phase 2): Dispose of the async engine connection pool.
-    """
-    logger.info("AI-MOS Gateway shutting down gracefully.")
-
 
 # =============================================================================
 # Health Probe

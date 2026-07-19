@@ -17,12 +17,17 @@ export const useLlmStream = () => {
       onStart: () => void
     ) => {
       // 1. Fetch credentials from localStorage
-      const apiKey = localStorage.getItem("aimos_api_key");
-      const provider = localStorage.getItem("aimos_provider");
+      const provider = localStorage.getItem("aimos_provider") || "nvidia-nim";
       const userId = localStorage.getItem("aimos_user_id") || undefined;
+      
+      let apiKey = "";
+      if (provider === "nvidia-nim") apiKey = localStorage.getItem("aimos_nvidia_api_key") || "";
+      if (provider === "openai") apiKey = localStorage.getItem("aimos_openai_api_key") || "";
+      if (provider === "google-gemini") apiKey = localStorage.getItem("aimos_gemini_api_key") || "";
+      if (provider === "anthropic") apiKey = localStorage.getItem("aimos_anthropic_api_key") || "";
 
       if (!apiKey || !provider) {
-        setError("Credentials not found. Please click the key icon to configure BYOK.");
+        setError("API key for the selected provider is missing. Click the key icon to configure it.");
         return false;
       }
 

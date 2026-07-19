@@ -139,7 +139,7 @@ async def stream_mentor_chat(
     # -------------------------------------------------------------------------
     # 6. Contact upstream LLM & stream tokens
     # -------------------------------------------------------------------------
-    provider_response = await LLMFactory.get_streaming_response(
+    event_stream = await LLMFactory.get_streaming_response(
         provider=x_user_provider,
         api_key=x_user_api_key,
         payload=payload.model_dump(),
@@ -148,13 +148,11 @@ async def stream_mentor_chat(
 
     async def event_stream_generator():
         try:
-            async for chunk in provider_response.aiter_raw():
+            async for chunk in event_stream:
                 if chunk:
-                    yield chunk
+                    yield chunk.encode("utf-8")
         except Exception as exc:
             logger.error("SSE stream interrupted: %s", type(exc).__name__)
-        finally:
-            await provider_response.aclose()
 
     return StreamingResponse(
         content=event_stream_generator(),

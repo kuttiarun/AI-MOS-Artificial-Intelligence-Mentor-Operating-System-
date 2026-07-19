@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { BookOpen, Check, Play, AlertCircle } from "lucide-react";
+import { useTelemetry } from "../hooks/useTelemetry";
 
 interface LessonCanvasProps {
   activeNodeId: string;
@@ -13,6 +14,7 @@ export const LessonCanvas: React.FC<LessonCanvasProps> = ({
   activeNodeId,
   onAdvanceNode,
 }) => {
+  const { incrementAttempts, setTelemetryPassed } = useTelemetry(activeNodeId);
   const [markdown, setMarkdown] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,14 +55,29 @@ export const LessonCanvas: React.FC<LessonCanvasProps> = ({
     e.preventDefault();
     if (!submission.trim() || isValidating) return;
 
+    // Record this validation check attempt
+    incrementAttempts();
+
     setIsValidating(true);
     setGateFeedback(null);
+
+    // Read BYOK credentials from localStorage (same pattern as useLlmStream)
+    const provider = localStorage.getItem("aimos_provider") || "nvidia-nim";
+    const userId = localStorage.getItem("aimos_user_id");
+    let apiKey = "";
+    if (provider === "nvidia-nim") apiKey = localStorage.getItem("aimos_nvidia_api_key") || "";
+    if (provider === "openai") apiKey = localStorage.getItem("aimos_openai_api_key") || "";
+    if (provider === "google-gemini") apiKey = localStorage.getItem("aimos_gemini_api_key") || "";
+    if (provider === "anthropic") apiKey = localStorage.getItem("aimos_anthropic_api_key") || "";
 
     try {
       const response = await fetch("http://localhost:8000/api/v1/curriculum/validate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-User-API-Key": apiKey,
+          "X-User-Provider": provider,
+          ...(userId ? { "X-User-Id": userId } : {}),
         },
         body: JSON.stringify({
           node_id: activeNodeId,
@@ -76,6 +93,9 @@ export const LessonCanvas: React.FC<LessonCanvasProps> = ({
       const data = await response.json();
       setGateFeedback(data.feedback);
       setGatePassed(data.passed);
+      
+      // Update telemetry passed status
+      setTelemetryPassed(data.passed);
     } catch (err: any) {
       setGateFeedback(err.message || "An error occurred during verification.");
     } finally {
@@ -107,7 +127,7 @@ export const LessonCanvas: React.FC<LessonCanvasProps> = ({
             </div>
           </div>
         ) : (
-          <article className="prose prose-invert max-w-none text-sm leading-relaxed space-y-4">
+          <article className="prose prose-invert max-w-none text-sm leading-relaxed space-y-4 select-none">
             <ReactMarkdown
               remarkPlugins={[remarkMath]}
               rehypePlugins={[rehypeKatex]}

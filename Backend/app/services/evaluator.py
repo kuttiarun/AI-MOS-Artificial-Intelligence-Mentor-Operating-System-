@@ -64,7 +64,7 @@ class SocraticEvaluator:
 
         try:
             # Call the compute factory stream
-            provider_response = await LLMFactory.get_streaming_response(
+            event_stream = await LLMFactory.get_streaming_response(
                 provider=provider,
                 api_key=api_key,
                 payload={"user_message": user_prompt},
@@ -72,26 +72,8 @@ class SocraticEvaluator:
             )
 
             # Accumulate text tokens from the SSE stream
-            response_content = ""
-            async for raw_chunk in provider_response.aiter_text():
-                # Split raw chunks into standard SSE lines
-                for line in raw_chunk.split("\n"):
-                    line = line.strip()
-                    if not line:
-                        continue
-                    if line.startswith("data:"):
-                        data_content = line[5:].strip()
-                        if data_content == "[DONE]":
-                            break
-                        try:
-                            parsed_data = json.loads(data_content)
-                            token = parsed_data["choices"][0]["delta"].get("content", "")
-                            response_content += token
-                        except Exception:
-                            # Skip partial SSE line parsing errors
-                            pass
+            response_content = await LLMFactory.extract_content_from_stream(event_stream)
 
-            await provider_response.aclose()
             logger.info("Raw evaluator output: %s", response_content)
 
             # Parse JSON using robust brace boundaries

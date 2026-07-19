@@ -28,6 +28,7 @@ class User(Base):
     password_hash = sa.Column("password_hash", sa.String, nullable=False)
     target_role = sa.Column("target_role", sa.String)
     operating_system = sa.Column("operating_system", sa.String, nullable=False)
+    onboarding_complete = sa.Column("onboarding_complete", sa.Boolean, nullable=False, default=False)
 
 
 class CurriculumNode(Base):
@@ -57,6 +58,27 @@ class WeakArea(Base):
     review_status = sa.Column("review_status", sa.String, nullable=False, default="active")
 
 
+class ContentTelemetry(Base):
+    __tablename__ = "content_telemetry"
+    id = sa.Column("id", sa.Integer, primary_key=True, autoincrement=True)
+    user_id = sa.Column("user_id", sa.UUID, nullable=True)
+    node_id = sa.Column("node_id", sa.String, nullable=False)
+    time_spent_seconds = sa.Column("time_spent_seconds", sa.Float, nullable=False)
+    attempts = sa.Column("attempts", sa.Integer, nullable=False)
+    passed = sa.Column("passed", sa.Boolean, nullable=False)
+    created_at = sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now())
+
+
+class AnalogyPerformanceAggregate(Base):
+    __tablename__ = "analogy_performance_aggregates"
+    node_id = sa.Column("node_id", sa.String, primary_key=True)
+    total_impressions = sa.Column("total_impressions", sa.Integer, nullable=False, default=0)
+    first_pass_velocity = sa.Column("first_pass_velocity", sa.Float, nullable=False, default=0.0)
+    average_attempts = sa.Column("average_attempts", sa.Float, nullable=False, default=0.0)
+    updated_at = sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now())
+
+
+
 # =============================================================================
 # Helper: Seed/Retrieve Test User
 # =============================================================================
@@ -75,7 +97,8 @@ async def get_or_create_test_user(db: AsyncSession) -> UUID:
         email="test_student@aimos.dev",
         password_hash="pbkdf2:sha256:mock_hash_for_dev",
         target_role="Java Developer (Zoho)",
-        operating_system="Windows"
+        operating_system="Windows",
+        onboarding_complete=True,  # Test users bypass the onboarding gate
     )
     db.add(default_user)
     await db.commit()
