@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { BookOpen, Check, Play, AlertCircle } from "lucide-react";
 
 interface LessonCanvasProps {
@@ -107,6 +109,8 @@ export const LessonCanvas: React.FC<LessonCanvasProps> = ({
         ) : (
           <article className="prose prose-invert max-w-none text-sm leading-relaxed space-y-4">
             <ReactMarkdown
+              remarkPlugins={[remarkMath]}
+              rehypePlugins={[rehypeKatex]}
               components={{
                 // Prevent lazy copying of code containers strictly (UI&UX.md §4)
                 code({ node, className, children, ...props }) {

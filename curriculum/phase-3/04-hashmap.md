@@ -1,12 +1,12 @@
 # HashMap: Hashing, Buckets, and Collision Resolution
 
 ## 1. Core Why
-When dealing with large volumes of data, searching sequentially through lists or arrays scales poorly—$O(N)$ time complexity. HashMaps solve this by offering near-instantaneous $O(1)$ search, insert, and delete operations, regardless of data size, by turning keys directly into array index coordinates.
+When dealing with large volumes of data, searching sequentially through lists or arrays scales poorly—**O(N)** time complexity. HashMaps solve this by offering near-instantaneous **O(1)** search, insert, and delete operations, regardless of data size, by turning keys directly into array index coordinates.
 
 ---
 
 ## 2. The Problem
-If you store key-value pairs in a standard list, finding a value by its key requires scanning elements one by one. If you have 1 million elements, you might make 1 million comparisons. Even with sorted arrays and binary search, it requires $O(\log N)$ comparisons. We need a way to look up a record in a single step.
+If you store key-value pairs in a standard list, finding a value by its key requires scanning elements one by one. If you have 1 million elements, you might make 1 million comparisons. Even with sorted arrays and binary search, it requires **O(log N)** comparisons. We need a way to look up a record in a single step.
 
 ---
 

@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { Send, Key, Cpu, AlertTriangle } from "lucide-react";
 import type { Message } from "../hooks/useLlmStream";
 
@@ -91,6 +93,8 @@ export const SocraticConsole: React.FC<SocraticConsoleProps> = ({
                 <p className="whitespace-pre-wrap">{msg.content}</p>
               ) : (
                 <ReactMarkdown
+                  remarkPlugins={[remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
                   components={{
                     // Format output code tags nicely
                     code({ className, children, ...props }) {
