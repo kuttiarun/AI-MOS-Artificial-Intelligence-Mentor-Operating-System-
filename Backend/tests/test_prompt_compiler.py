@@ -28,6 +28,9 @@ def test_base_socratic_prompt_structure():
     assert "You are AI-MOS — the Artificial Intelligence Mentor Operating System v1.0." in compiled
     assert "THE SOCRATIC METHOD" in compiled
     assert "COMPREHENSION CHECKS" in compiled
+    assert "THE AI-MOS v2.0 TEACHING SEQUENCE" in compiled
+    assert "THE ECOSYSTEM COMPARISON FRAMEWORK" in compiled
+    assert "ADAPTIVE MENTORSHIP AND INDIVIDUAL TUNING" in compiled
 
     # Assert lesson text is present
     assert "This is a lesson about Polymorphism in Java." in compiled
