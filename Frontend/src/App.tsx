@@ -17,7 +17,12 @@ function App() {
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>(null);
   const [dashboardVisible, setDashboardVisible] = useState(false);
   const [activeNodeId, setActiveNodeId] = useState("java-collections-hashmap");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: "mentor",
+      content: "Hello! I am your Socratic Mentor. Let's explore the concepts in this lesson together. What questions or thoughts do you have?"
+    }
+  ]);
   const [isKeysOpen, setIsKeysOpen] = useState(false);
 
   const { streamChat, isStreaming, error, setError } = useLlmStream();
@@ -55,9 +60,14 @@ function App() {
       });
   }, []);
 
-  // ── 3. Clear chat log on active node changes ───────────────────────────────
+  // ── 3. Initialize chat log with welcome prompt on node changes ────────────
   useEffect(() => {
-    setMessages([]);
+    setMessages([
+      {
+        role: "mentor",
+        content: "Hello! I am your Socratic Mentor. Let's explore the concepts in this lesson together. What questions or thoughts do you have?"
+      }
+    ]);
     setError(null);
   }, [activeNodeId, setError]);
 

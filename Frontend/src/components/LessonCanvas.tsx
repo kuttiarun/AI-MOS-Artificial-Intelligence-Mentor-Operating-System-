@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import { BookOpen, Check, Play, AlertCircle } from "lucide-react";
 import { useTelemetry } from "../hooks/useTelemetry";
@@ -129,7 +130,7 @@ export const LessonCanvas: React.FC<LessonCanvasProps> = ({
         ) : (
           <article className="prose prose-invert max-w-none text-sm leading-relaxed space-y-4 select-none">
             <ReactMarkdown
-              remarkPlugins={[remarkMath]}
+              remarkPlugins={[remarkMath, remarkGfm]}
               rehypePlugins={[rehypeKatex]}
               components={{
                 // Prevent lazy copying of code containers strictly (UI&UX.md §4)
@@ -165,69 +166,97 @@ export const LessonCanvas: React.FC<LessonCanvasProps> = ({
                 li({ children }) {
                   return <li className="text-slate-300">{children}</li>;
                 },
+                table({ children }) {
+                  return (
+                    <div className="overflow-x-auto my-4 rounded-lg border border-slate-800 bg-slate-900/10">
+                      <table className="w-full text-left border-collapse text-xs">
+                        {children}
+                      </table>
+                    </div>
+                  );
+                },
+                thead({ children }) {
+                  return <thead className="bg-slate-900 text-slate-200 border-b border-slate-800 font-semibold">{children}</thead>;
+                },
+                tbody({ children }) {
+                  return <tbody className="divide-y divide-slate-800">{children}</tbody>;
+                },
+                tr({ children }) {
+                  return <tr className="even:bg-slate-900/30 hover:bg-slate-900/50 transition-colors">{children}</tr>;
+                },
+                th({ children }) {
+                  return <th className="px-4 py-3 font-bold border-r border-slate-800 last:border-r-0">{children}</th>;
+                },
+                td({ children }) {
+                  return <td className="px-4 py-2.5 text-slate-300 border-r border-slate-800 last:border-r-0">{children}</td>;
+                },
               }}
             >
               {markdown}
             </ReactMarkdown>
-
-            {/* Checkpoint Validation Gate Block */}
-            <div className={`mt-8 rounded-xl border p-5 transition-all ${
-              gatePassed 
-                ? "border-emerald-500/50 bg-emerald-950/20" 
-                : "border-slate-800 bg-slate-900/50"
-            }`}>
-              <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                <Check className={gatePassed ? "text-emerald-400" : "text-slate-500"} size={16} />
-                Verification Checkpoint Gate
-              </h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                In your own words, explain the core concepts of this lesson to the Socratic Mentor. 
-                Your answer must be validated by the evaluation engine to unlock the next syllabus block.
-              </p>
-
-              {gateFeedback && (
-                <div className={`mt-3 rounded-lg p-3 text-xs leading-relaxed ${
-                  gatePassed 
-                    ? "bg-emerald-950/30 text-emerald-300 border border-emerald-800/40" 
-                    : "bg-amber-950/30 text-amber-300 border border-amber-800/40"
-                }`}>
-                  {gateFeedback}
-                </div>
-              )}
-
-              {gatePassed ? (
-                <button
-                  onClick={onAdvanceNode}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 transition-colors shadow-md shadow-emerald-950/30"
-                >
-                  <Play size={12} />
-                  Proceed to Next Lesson
-                </button>
-              ) : (
-                <form onSubmit={handleValidateSubmit} className="mt-4 space-y-3">
-                  <textarea
-                    rows={3}
-                    placeholder="Type your explanation here..."
-                    required
-                    value={submission}
-                    onChange={(e) => setSubmission(e.target.value)}
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={isValidating || !submission.trim()}
-                      className="rounded-lg bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors disabled:bg-slate-800 disabled:text-slate-500"
-                    >
-                      {isValidating ? "Evaluating..." : "Submit Answer"}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
           </article>
         )}
       </div>
+
+      {/* Pinned Checkpoint Validation Gate Block */}
+      {!loading && !error && (
+        <div className="border-t border-slate-800 bg-slate-950 p-4 shrink-0">
+          <div className={`rounded-xl border p-4 transition-all ${
+            gatePassed 
+              ? "border-emerald-500/50 bg-emerald-950/20" 
+              : "border-slate-800 bg-slate-900/50"
+          }`}>
+            <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+              <Check className={gatePassed ? "text-emerald-400" : "text-slate-500"} size={16} />
+              Verification Checkpoint Gate
+            </h3>
+            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              In your own words, explain the core concepts of this lesson to the Socratic Mentor. 
+              Your answer must be validated by the evaluation engine to unlock the next syllabus block.
+            </p>
+
+            {gateFeedback && (
+              <div className={`mt-3 rounded-lg p-3 text-xs leading-relaxed ${
+                gatePassed 
+                  ? "bg-emerald-950/30 text-emerald-300 border border-emerald-800/40" 
+                  : "bg-amber-950/30 text-amber-300 border border-amber-800/40"
+              }`}>
+                {gateFeedback}
+              </div>
+            )}
+
+            {gatePassed ? (
+              <button
+                onClick={onAdvanceNode}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 transition-colors shadow-md shadow-emerald-950/30"
+              >
+                <Play size={12} />
+                Proceed to Next Lesson
+              </button>
+            ) : (
+              <form onSubmit={handleValidateSubmit} className="mt-4 space-y-3">
+                <textarea
+                  rows={3}
+                  placeholder="Type your explanation here..."
+                  required
+                  value={submission}
+                  onChange={(e) => setSubmission(e.target.value)}
+                  className="w-full rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isValidating || !submission.trim()}
+                    className="rounded-lg bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors disabled:bg-slate-800 disabled:text-slate-500"
+                  >
+                    {isValidating ? "Evaluating..." : "Submit Answer"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

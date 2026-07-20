@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import { Send, Key, Cpu, AlertTriangle, Flame, Award } from "lucide-react";
 import type { Message } from "../hooks/useLlmStream";
@@ -81,6 +82,22 @@ export const SocraticConsole: React.FC<SocraticConsoleProps> = ({
       setIsInterviewLoading(false);
     }
   };
+
+  // Auto-activate Zoho mock interview session when user switches to Zoho panel tab
+  useEffect(() => {
+    if (activeTab === "interview" && !interviewActive && interviewMessages.length === 0 && !isInterviewLoading) {
+      handleStartInterview();
+    }
+  }, [activeTab, interviewActive, interviewMessages, isInterviewLoading]);
+
+  // Reset interview state when active node changes
+  useEffect(() => {
+    setInterviewActive(false);
+    setInterviewMessages([]);
+    setLatestScore(null);
+    setLatestCritique(null);
+    setInterviewError(null);
+  }, [activeNodeId]);
 
   const handleSendInterviewMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,7 +242,7 @@ export const SocraticConsole: React.FC<SocraticConsoleProps> = ({
                     <p className="whitespace-pre-wrap">{msg.content}</p>
                   ) : (
                     <ReactMarkdown
-                      remarkPlugins={[remarkMath]}
+                      remarkPlugins={[remarkMath, remarkGfm]}
                       rehypePlugins={[rehypeKatex]}
                       components={{
                         code({ className, children, ...props }) {
@@ -250,6 +267,30 @@ export const SocraticConsole: React.FC<SocraticConsoleProps> = ({
                         },
                         ul({ children }) {
                           return <ul className="list-disc pl-4 space-y-0.5 my-1 text-slate-400">{children}</ul>;
+                        },
+                        table({ children }) {
+                          return (
+                            <div className="overflow-x-auto my-3 rounded-lg border border-slate-800 bg-slate-900/10">
+                              <table className="w-full text-left border-collapse text-[10px]">
+                                {children}
+                              </table>
+                            </div>
+                          );
+                        },
+                        thead({ children }) {
+                          return <thead className="bg-slate-900 text-slate-200 border-b border-slate-800 font-semibold">{children}</thead>;
+                        },
+                        tbody({ children }) {
+                          return <tbody className="divide-y divide-slate-800">{children}</tbody>;
+                        },
+                        tr({ children }) {
+                          return <tr className="even:bg-slate-900/30 hover:bg-slate-900/50 transition-colors">{children}</tr>;
+                        },
+                        th({ children }) {
+                          return <th className="px-3 py-2 font-bold border-r border-slate-800 last:border-r-0">{children}</th>;
+                        },
+                        td({ children }) {
+                          return <td className="px-3 py-1.5 text-slate-300 border-r border-slate-800 last:border-r-0">{children}</td>;
                         },
                       }}
                     >
@@ -358,7 +399,7 @@ export const SocraticConsole: React.FC<SocraticConsoleProps> = ({
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                     ) : (
                       <ReactMarkdown
-                        remarkPlugins={[remarkMath]}
+                        remarkPlugins={[remarkMath, remarkGfm]}
                         rehypePlugins={[rehypeKatex]}
                         components={{
                           code({ className, children, ...props }) {
@@ -380,6 +421,30 @@ export const SocraticConsole: React.FC<SocraticConsoleProps> = ({
                           },
                           p({ children }) {
                             return <p className="mb-1.5 last:mb-0">{children}</p>;
+                          },
+                          table({ children }) {
+                            return (
+                              <div className="overflow-x-auto my-3 rounded-lg border border-slate-800 bg-slate-900/10">
+                                <table className="w-full text-left border-collapse text-[10px]">
+                                  {children}
+                                </table>
+                              </div>
+                            );
+                          },
+                          thead({ children }) {
+                            return <thead className="bg-slate-900 text-slate-200 border-b border-slate-800 font-semibold">{children}</thead>;
+                          },
+                          tbody({ children }) {
+                            return <tbody className="divide-y divide-slate-800">{children}</tbody>;
+                          },
+                          tr({ children }) {
+                            return <tr className="even:bg-slate-900/30 hover:bg-slate-900/50 transition-colors">{children}</tr>;
+                          },
+                          th({ children }) {
+                            return <th className="px-3 py-2 font-bold border-r border-slate-800 last:border-r-0">{children}</th>;
+                          },
+                          td({ children }) {
+                            return <td className="px-3 py-1.5 text-slate-300 border-r border-slate-800 last:border-r-0">{children}</td>;
                           },
                         }}
                       >
