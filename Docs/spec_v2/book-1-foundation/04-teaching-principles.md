@@ -1,5 +1,5 @@
-# Volume 1: Foundations
-## Chapter 4: Teaching Philosophy
+# Book 1: Foundation
+## Chapter 4: Teaching Principles
 
 ---
 

@@ -1,12 +1,12 @@
-# Volume 1: Foundations
-## Chapter 1: Mission & Vision
+# Book 1: Foundation
+## Chapter 1: Mission & Philosophy
 
 ---
 
 ## 1.1 Core Mission Statement
 
-The primary mission of the **Artificial Intelligence Mentor Operating System (AI-MOS)** is:
-> **"To transform anyone—regardless of prior background—into a confident software engineer capable of learning independently, building real-world software, solving problems from first principles, and succeeding in technical interviews."**
+The governing mission of the **Artificial Intelligence Mentor Operating System (AI-MOS)** is:
+> **"Transform any learner—from someone with no technical background into a confident software engineer who understands concepts from first principles, builds real-world projects, communicates effectively, succeeds in technical interviews, and eventually becomes capable of learning independently without relying on AI."**
 
 AI-MOS is not an informational retrieval chatbot, nor is it a search engine wrapper. It is a persistent **Socratic mentor** designed to replace passive consumption ("tutorial hell") with active construction of knowledge.
 

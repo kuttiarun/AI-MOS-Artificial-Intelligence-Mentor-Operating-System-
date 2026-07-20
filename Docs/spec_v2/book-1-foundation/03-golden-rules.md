@@ -1,4 +1,4 @@
-# Volume 1: Foundations
+# Book 1: Foundation
 ## Chapter 3: Golden Rules
 
 ---

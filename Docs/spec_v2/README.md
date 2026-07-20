@@ -11,52 +11,67 @@
 
 ## 🧭 Directory Matrix
 
-This specification is broken down into structured volumes and chapters to allow modular reference and step-by-step contributions:
+This specification is broken down into structured books and chapters to allow modular reference and step-by-step contributions:
 
-### [Volume 1 — Foundations](volume-1-foundations/)
-* **Chapter 1**: [Mission & Vision](volume-1-foundations/01-mission-and-vision.md)
-* **Chapter 2**: [Mentor Identity](volume-1-foundations/02-mentor-identity.md)
-* **Chapter 3**: [Golden Rules](volume-1-foundations/03-golden-rules.md)
-* **Chapter 4**: [Teaching Philosophy](volume-1-foundations/04-teaching-philosophy.md)
-* **Chapter 5**: [Learning Psychology](volume-1-foundations/05-learning-psychology.md)
+### [Book 1 — Foundation](book-1-foundation/)
+* **Chapter 1**: [Mission & Philosophy](book-1-foundation/01-mission-and-philosophy.md)
+* **Chapter 2**: [Mentor Identity](book-1-foundation/02-mentor-identity.md)
+* **Chapter 3**: [Golden Rules](book-1-foundation/03-golden-rules.md)
+* **Chapter 4**: [Teaching Principles](book-1-foundation/04-teaching-principles.md)
 
-### Volume 2 — Student Discovery
-* **Chapter 6**: Career Discovery
-* **Chapter 7**: Operating System Assessment
-* **Chapter 8**: Skill Assessment
+### Book 2 — Student Discovery
+* **Chapter 5**: Career Discovery
+* **Chapter 6**: Skill Assessment
+* **Chapter 7**: Learning Style Detection
+* **Chapter 8**: OS & Hardware Assessment
 * **Chapter 9**: English Level Assessment
-* **Chapter 10**: Learning Style Detection
+* **Chapter 10**: Budget Assessment
 
-### Volume 3 — Teaching Engine
+### Book 3 — Teaching Engine
 * **Chapter 11**: First Principles
-* **Chapter 12**: Analogies
-* **Chapter 13**: Story-based Teaching
-* **Chapter 14**: Visual Teaching
-* **Chapter 15**: Code Teaching
-* **Chapter 16**: Debugging
+* **Chapter 12**: Real-world Analogies
+* **Chapter 13**: Visual Learning
+* **Chapter 14**: Story-based Learning
+* **Chapter 15**: Code Explanation Rules
+* **Chapter 16**: Adaptive Difficulty
 
-### Volume 4 — Career Engine
-* **Chapter 17**: Resume Engineering
-* **Chapter 18**: ATS Optimization
-* **Chapter 19**: LinkedIn Networking
-* **Chapter 20**: GitHub Portfolio
-* **Chapter 21**: Project Portfolio
-* **Chapter 22**: Job Search Strategy
-* **Chapter 23**: Fake Job Detection
+### Book 4 — Learning Engine
+* **Chapter 17**: Roadmap Generator
+* **Chapter 18**: Prerequisite Detection
+* **Chapter 19**: Knowledge Graph
+* **Chapter 20**: Revision System
+* **Chapter 21**: Confidence Tracking
+* **Chapter 22**: Memory System
 
-### Volume 5 — Interview Engine
-* **Chapter 24**: Java & Core OOP
-* **Chapter 25**: Data Structures & Algorithms
-* **Chapter 26**: Behavioral/HR Simulation
-* **Chapter 27**: System Design Methodology
-* **Chapter 28**: Srinivasan Mock Interview Protocol
+### Book 5 — Practical Learning
+* **Chapter 23**: Tool Ecosystems
+* **Chapter 24**: Free vs Paid Resources
+* **Chapter 25**: Installation Guides
+* **Chapter 26**: Mini Projects
+* **Chapter 27**: Portfolio Projects
+* **Chapter 28**: Debugging
 
-### Volume 6 — Continuous Growth
-* **Chapter 29**: Career Switching Framework
-* **Chapter 30**: Open Source Contribution
-* **Chapter 31**: Technical Research Skills
-* **Chapter 32**: Navigating Official Documentation
-* **Chapter 33**: Learning New Technologies Independently
+### Book 6 — Career Engine
+* **Chapter 29**: Resume Builder
+* **Chapter 30**: ATS Optimization
+* **Chapter 31**: LinkedIn
+* **Chapter 32**: GitHub
+* **Chapter 33**: Job Search
+* **Chapter 34**: Fake Job Detection
+* **Chapter 35**: Communities
+
+### Book 7 — Interview Engine
+* **Chapter 36**: Coding Interviews
+* **Chapter 37**: Java Interviews
+* **Chapter 38**: HR Interviews
+* **Chapter 39**: Mock Interviews
+* **Chapter 40**: Final Evaluation
+
+### Book 8 — Graduation
+* **Chapter 41**: Portfolio Review
+* **Chapter 42**: Resume Review
+* **Chapter 43**: Career Roadmap
+* **Chapter 44**: Continuous Learning
 
 ---
 
