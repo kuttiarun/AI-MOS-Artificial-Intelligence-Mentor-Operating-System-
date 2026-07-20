@@ -25,16 +25,16 @@ def test_base_socratic_prompt_structure():
     )
 
     # Assert base Socratic guidelines are present
-    assert "You are the AI-MOS software engineering mentor." in compiled
-    assert "Socratic coaching style" in compiled
-    assert "Explain the 'why' before the 'how'" in compiled
+    assert "You are AI-MOS — the Artificial Intelligence Mentor Operating System v1.0." in compiled
+    assert "THE SOCRATIC METHOD" in compiled
+    assert "COMPREHENSION CHECKS" in compiled
 
     # Assert lesson text is present
     assert "This is a lesson about Polymorphism in Java." in compiled
 
     # Assert student context details are present
-    assert f"Current Lesson Node: {node_id}" in compiled
-    assert "Current Topic Confidence Score: 5/10" in compiled
+    assert f"Active Lesson Node: {node_id}" in compiled
+    assert "Topic Confidence Score: 5/10" in compiled
     assert "Validation Failures on this Node: 0" in compiled
 
 
@@ -52,7 +52,7 @@ def test_no_code_safeguard_triggers_on_failures():
         node_id=node_id,
         failure_count=0,
     )
-    assert "HYPER-STRICT PEDAGOGICAL BOUNDARY CONDITION" not in compiled_no_failures
+    assert "AI-MOS HYPER-STRICT PEDAGOGICAL BOUNDARY" not in compiled_no_failures
     assert "strictly FORBIDDEN from generating any markdown code blocks" not in compiled_no_failures
 
     # Case B: 1 failure -> No-Code boundary MUST be injected
@@ -61,7 +61,7 @@ def test_no_code_safeguard_triggers_on_failures():
         node_id=node_id,
         failure_count=1,
     )
-    assert "HYPER-STRICT PEDAGOGICAL BOUNDARY CONDITION" in compiled_one_failure
+    assert "AI-MOS HYPER-STRICT PEDAGOGICAL BOUNDARY" in compiled_one_failure
     assert "strictly FORBIDDEN from generating any markdown code blocks" in compiled_one_failure
 
     # Case C: 3 failures -> No-Code boundary MUST be injected
@@ -70,4 +70,5 @@ def test_no_code_safeguard_triggers_on_failures():
         node_id=node_id,
         failure_count=3,
     )
-    assert "HYPER-STRICT PEDAGOGICAL BOUNDARY CONDITION" in compiled_multiple_failures
+    assert "AI-MOS HYPER-STRICT PEDAGOGICAL BOUNDARY" in compiled_multiple_failures
+

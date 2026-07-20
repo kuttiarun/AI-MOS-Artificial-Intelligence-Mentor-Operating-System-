@@ -117,16 +117,16 @@ export function OnboardingChat({ onComplete, onOpenKeys }: OnboardingChatProps) 
 
       const data = await res.json();
 
-      if (data.is_complete) {
-        // Turn 5 complete — show finishing animation then unlock dashboard
+        if (data.is_complete) {
+        // Turn 5 complete — show Mission Brief then unlock dashboard
         setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
         setIsFinishing(true);
-        // Store profile in localStorage for potential frontend use
+        // Store full profile_matrix so DashboardOverview can read target_role, baseline_level etc.
         if (data.profile_matrix) {
-          localStorage.setItem("aimos_profile", JSON.stringify(data.profile_matrix));
+          localStorage.setItem("aimos_profile_matrix", JSON.stringify(data.profile_matrix));
         }
-        // Brief pause for the user to read the completion message
-        setTimeout(() => onComplete(), 2200);
+        // Longer pause to let the user read the Mission Brief before transitioning
+        setTimeout(() => onComplete(), 3800);
       } else {
         setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
         setTurnNumber(data.turn_number + 1);
@@ -189,9 +189,9 @@ export function OnboardingChat({ onComplete, onOpenKeys }: OnboardingChatProps) 
           <div className="progress-area">
             <span className="progress-label">
               {isFinishing
-                ? "Profile complete ✓"
+                ? "Mission Brief Finalized ✓"
                 : turnNumber > 0
-                ? `Question ${Math.min(turnNumber, 5)} of 5`
+                ? `Diagnostic Protocol — Step ${Math.min(turnNumber, 5)} of 5`
                 : "Initializing…"}
             </span>
             <div className="progress-track">
@@ -241,17 +241,59 @@ export function OnboardingChat({ onComplete, onOpenKeys }: OnboardingChatProps) 
                 </div>
               )}
 
-              {/* Finishing overlay */}
-              {isFinishing && (
-                <div className="finishing-card">
-                  <div className="finishing-icon">✦</div>
-                  <p className="finishing-title">Analyzing your profile…</p>
-                  <p className="finishing-sub">Your dashboard is being prepared</p>
-                  <div className="finishing-bar">
-                    <div className="finishing-bar-fill" />
+              {/* Finishing card — Student Mission Brief */}
+              {isFinishing && (() => {
+                let profile: Record<string, string> = {};
+                try {
+                  const raw = localStorage.getItem("aimos_profile_matrix");
+                  if (raw) profile = JSON.parse(raw);
+                } catch {/* ignore */}
+                return (
+                  <div className="finishing-card">
+                    <div className="finishing-icon">✦</div>
+                    <p className="finishing-title">Student Mission Brief Generated</p>
+                    <p className="finishing-sub">Your personalized OS dashboard is being prepared</p>
+
+                    {/* Mission Brief display */}
+                    {profile.target_role && (
+                      <div className="mission-brief">
+                        <div className="brief-row">
+                          <span className="brief-label">TARGET ROLE</span>
+                          <span className="brief-value">{profile.target_role}</span>
+                        </div>
+                        {profile.target_companies && (
+                          <div className="brief-row">
+                            <span className="brief-label">TARGET COMPANIES</span>
+                            <span className="brief-value">{profile.target_companies}</span>
+                          </div>
+                        )}
+                        {profile.baseline_level && (
+                          <div className="brief-row">
+                            <span className="brief-label">BASELINE LEVEL</span>
+                            <span className="brief-value">{profile.baseline_level}</span>
+                          </div>
+                        )}
+                        {profile.estimated_weeks && (
+                          <div className="brief-row">
+                            <span className="brief-label">EST. TIMELINE</span>
+                            <span className="brief-value">{profile.estimated_weeks}</span>
+                          </div>
+                        )}
+                        {profile.recommended_path && (
+                          <div className="brief-row brief-row-full">
+                            <span className="brief-label">RECOMMENDED PATH</span>
+                            <span className="brief-value brief-path">{profile.recommended_path}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="finishing-bar">
+                      <div className="finishing-bar-fill" />
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {error && (
                 <div className="error-banner">
@@ -562,6 +604,38 @@ export function OnboardingChat({ onComplete, onOpenKeys }: OnboardingChatProps) 
         }
         @keyframes fill-bar {
           to { width: 100%; }
+        }
+
+        /* ── Student Mission Brief ── */
+        .mission-brief {
+          width: 100%; margin-top: 12px;
+          border: 1px solid rgba(16,185,129,0.2);
+          border-radius: 10px; overflow: hidden;
+          font-size: 12px;
+        }
+        .brief-row {
+          display: grid; grid-template-columns: 120px 1fr;
+          border-bottom: 1px solid rgba(16,185,129,0.1);
+        }
+        .brief-row:last-child { border-bottom: none; }
+        .brief-row-full { grid-template-columns: 1fr; }
+        .brief-label {
+          padding: 7px 10px; font-size: 9px; font-weight: 700;
+          letter-spacing: 0.1em; color: #6ee7b7;
+          background: rgba(16,185,129,0.07);
+          text-transform: uppercase;
+          border-right: 1px solid rgba(16,185,129,0.1);
+          display: flex; align-items: center;
+        }
+        .brief-row-full .brief-label {
+          border-right: none; border-bottom: 1px solid rgba(16,185,129,0.1);
+        }
+        .brief-value {
+          padding: 7px 10px; color: #e2e8f0; font-weight: 500;
+          display: flex; align-items: center;
+        }
+        .brief-path {
+          font-size: 11px; color: #a5f3fc; font-family: monospace; word-break: break-word;
         }
 
         /* ── Error banner ── */
