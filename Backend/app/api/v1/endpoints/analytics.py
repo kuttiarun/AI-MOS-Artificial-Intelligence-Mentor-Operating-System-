@@ -16,8 +16,11 @@ from app.core.database import AsyncSessionLocal, get_db
 from app.services.progress import (
     get_or_create_test_user,
     get_curriculum_node,
+    get_user_streak,
     ContentTelemetry,
     AnalogyPerformanceAggregate,
+    UserProgress,
+    CurriculumNode,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,6 +42,16 @@ class TelemetryPayload(BaseModel):
 class TelemetryResponse(BaseModel):
     status: str
     message: str
+
+
+class UserStatsResponse(BaseModel):
+    completed: int
+    in_progress: int
+    total: int
+    completion_pct: int
+    xp: int
+    current_streak: int
+    longest_streak: int
 
 
 # =============================================================================
@@ -177,4 +190,60 @@ async def log_telemetry(
     return TelemetryResponse(
         status="accepted",
         message="Interaction telemetry queued for async processing."
+    )
+
+
+# =============================================================================
+# GET /stats — User Dashboard Stats
+# =============================================================================
+
+@router.get(
+    "/stats",
+    summary="Get User Learning Stats",
+    response_model=UserStatsResponse,
+    tags=["Analytics"],
+)
+async def get_user_stats(
+    x_user_id: str | None = Header(default=None, alias="X-User-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> UserStatsResponse:
+    """
+    Returns overall learning stats for the dashboard: completion, XP, and streak.
+    """
+    user_uuid = None
+    if x_user_id:
+        try:
+            user_uuid = UUID(x_user_id.strip())
+        except ValueError:
+            pass
+    if not user_uuid:
+        user_uuid = await get_or_create_test_user(db)
+
+    # Fetch progress records
+    progress_result = await db.execute(
+        select(UserProgress).where(UserProgress.user_id == user_uuid)
+    )
+    all_progress = list(progress_result.scalars().all())
+
+    completed = sum(1 for p in all_progress if p.status == "completed")
+    in_progress = sum(1 for p in all_progress if p.status == "in_progress")
+
+    # Total curriculum nodes
+    total_result = await db.execute(select(func.count()).select_from(CurriculumNode))
+    total = total_result.scalar() or 0
+
+    pct = round((completed / total) * 100) if total > 0 else 0
+    xp = (completed * 10) + (in_progress * 5)
+
+    # Fetch streak
+    streak = await get_user_streak(db, user_uuid)
+
+    return UserStatsResponse(
+        completed=completed,
+        in_progress=in_progress,
+        total=total,
+        completion_pct=pct,
+        xp=xp,
+        current_streak=streak.current_streak,
+        longest_streak=streak.longest_streak,
     )

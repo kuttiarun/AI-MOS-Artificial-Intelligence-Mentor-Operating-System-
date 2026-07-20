@@ -6,6 +6,7 @@ import { BYOKModal } from "./components/BYOKModal";
 import { OnboardingChat } from "./components/OnboardingChat";
 import { DashboardOverview } from "./components/DashboardOverview";
 import { LoginScreen } from "./components/LoginScreen";
+import { InterviewPanel } from "./components/InterviewPanel";
 import { useLlmStream } from "./hooks/useLlmStream";
 import type { Message } from "./hooks/useLlmStream";
 import type { NodeItem } from "./components/CurriculumTree";
@@ -21,8 +22,8 @@ function App() {
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>(null);
   const [dashboardVisible, setDashboardVisible] = useState(false);
 
-  // ── View state: "dashboard" shows OS home; "lesson" shows the lesson canvas ──
-  const [activeView, setActiveView] = useState<"dashboard" | "lesson">("dashboard");
+  // ── View state: "dashboard" | "lesson" | "interview" ─────────────────────────
+  const [activeView, setActiveView] = useState<"dashboard" | "lesson" | "interview">("dashboard");
   const [activeNodeId, setActiveNodeId] = useState("java-collections-hashmap");
 
   // ── Shared curriculum nodes state (lifted up from CurriculumTree) ───────────
@@ -250,14 +251,17 @@ function App() {
         />
       </aside>
 
-      {/* Column 2: Center canvas — OS Dashboard OR Lesson Content */}
+      {/* Column 2: Center canvas — OS Dashboard | Lesson Content | Interview Panel */}
       <main className="w-[50%] flex-1 h-full border-r border-slate-800">
         {activeView === "dashboard" ? (
           <DashboardOverview
             nodes={nodes}
             onSelectNode={handleSelectNode}
             isLoadingNodes={isLoadingNodes}
+            onEnterInterview={() => setActiveView("interview")}
           />
+        ) : activeView === "interview" ? (
+          <InterviewPanel onGoBack={() => setActiveView("dashboard")} />
         ) : (
           <LessonCanvas activeNodeId={activeNodeId} onAdvanceNode={handleAdvanceNode} />
         )}

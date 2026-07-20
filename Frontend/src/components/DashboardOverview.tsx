@@ -28,6 +28,7 @@ import {
   Activity,
   Cpu,
   HelpCircle,
+  Swords,
 } from "lucide-react";
 import type { NodeItem } from "./CurriculumTree";
 
@@ -37,6 +38,7 @@ interface DashboardOverviewProps {
   nodes: NodeItem[];
   onSelectNode: (id: string) => void;
   isLoadingNodes: boolean;
+  onEnterInterview?: () => void;
 }
 
 interface ProfileData {
@@ -44,6 +46,16 @@ interface ProfileData {
   baselineLevel: string;
   provider: string;
   userId: string;
+}
+
+interface UserStats {
+  completed: number;
+  in_progress: number;
+  total: number;
+  completion_pct: number;
+  xp: number;
+  current_streak: number;
+  longest_streak: number;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -79,7 +91,7 @@ const StatCard: React.FC<{
   value: string | number;
   sub?: string;
   icon: React.ReactNode;
-  accent: string; // tailwind color token e.g. "indigo" | "emerald" | "amber" | "orange"
+  accent: string;
 }> = ({ label, value, sub, icon, accent }) => {
   const accentMap: Record<string, { border: string; bg: string; text: string; subtext: string }> = {
     indigo: { border: "border-indigo-800/50", bg: "bg-indigo-950/30", text: "text-indigo-400", subtext: "text-indigo-300" },
@@ -100,6 +112,45 @@ const StatCard: React.FC<{
   );
 };
 
+// ─── SVG Radial Ring ─────────────────────────────────────────────────────────
+
+const RadialRing: React.FC<{
+  pct: number;
+  size?: number;
+  stroke?: number;
+  color: string;
+  trackColor?: string;
+  label: string;
+  sublabel?: string;
+}> = ({ pct, size = 80, stroke = 8, color, trackColor = "#1e293b", label, sublabel }) => {
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={trackColor} strokeWidth={stroke} />
+          <circle
+            cx={size / 2} cy={size / 2} r={r}
+            fill="none" stroke={color} strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circ}
+            strokeDashoffset={circ - dash}
+            style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)" }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-sm font-bold text-slate-100 tabular-nums">{pct}%</span>
+        </div>
+      </div>
+      <span className="text-[10px] font-semibold text-slate-300 text-center">{label}</span>
+      {sublabel && <span className="text-[9px] text-slate-600 text-center">{sublabel}</span>}
+    </div>
+  );
+};
+
 const PhaseBar: React.FC<{
   phase: number;
   nodes: NodeItem[];
@@ -113,6 +164,13 @@ const PhaseBar: React.FC<{
     1: "Foundations",
     2: "Java Core",
     3: "Collections & Data Structures",
+    4: "Java Advanced",
+    5: "Software Testing",
+    6: "Backend / Spring Boot",
+    7: "Build Tools & Database",
+    8: "Design Patterns & Architecture",
+    9: "System Design & Microservices",
+    10: "DSA for Java Interviews",
   };
 
   return (
@@ -157,11 +215,13 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   nodes,
   onSelectNode,
   isLoadingNodes,
+  onEnterInterview,
 }) => {
   const [profile] = useState<ProfileData>(getProfileFromStorage);
   const [backendPing, setBackendPing] = useState<"checking" | "online" | "offline">("checking");
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showTutorial, setShowTutorial] = useState(!localStorage.getItem("aimos_hide_tutorial"));
+  const [apiStats, setApiStats] = useState<UserStats | null>(null);
 
   const toggleTutorial = () => {
     if (showTutorial) {
@@ -173,12 +233,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     }
   };
 
-  // Ping backend health
+  // Ping backend health + fetch stats
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/curriculum/progress", {
-      headers: { "X-User-Id": localStorage.getItem("aimos_user_id") || "" },
-    })
-      .then(r => r.ok ? setBackendPing("online") : setBackendPing("offline"))
+    const userId = localStorage.getItem("aimos_user_id") || "";
+    const headers = userId ? { "X-User-Id": userId } : {};
+
+    fetch("http://localhost:8000/api/v1/analytics/stats", { headers })
+      .then(r => r.json())
+      .then((data: UserStats) => { setApiStats(data); setBackendPing("online"); })
       .catch(() => setBackendPing("offline"));
   }, []);
 
@@ -344,6 +406,66 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <div>
               <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">User Session</div>
               <div className="text-sm font-mono text-slate-400">{profile.userId}…</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Radial Progress Rings + Streak Banner ──────────────────────── */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp size={14} className="text-indigo-400" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-300">Learning Progress</h2>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Overall completion ring */}
+            <RadialRing
+              pct={apiStats?.completion_pct ?? stats.pct}
+              color="#6366f1"
+              label="Overall"
+              sublabel={`${apiStats?.completed ?? stats.completed}/${apiStats?.total ?? stats.total}`}
+            />
+
+            {/* Per-phase mini rings */}
+            <div className="flex items-center gap-3 overflow-x-auto py-1">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(phase => {
+                const phaseNodes = nodes.filter(n => n.phase === phase);
+                const phasePct = phaseNodes.length > 0
+                  ? Math.round((phaseNodes.filter(n => n.status === "completed").length / phaseNodes.length) * 100)
+                  : 0;
+                const colors = ["#64748b", "#3b82f6", "#6366f1", "#f59e0b", "#14b8a6", "#f43f5e", "#06b6d4", "#a855f7", "#10b981", "#f97316"];
+                const labels = ["Ph.1", "Ph.2", "Ph.3", "Ph.4", "Ph.5", "Ph.6", "Ph.7", "Ph.8", "Ph.9", "Ph.10"];
+                return (
+                  <RadialRing
+                    key={phase}
+                    pct={phasePct}
+                    size={52}
+                    stroke={5}
+                    color={colors[phase - 1]}
+                    label={labels[phase - 1]}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Streak section */}
+            <div className="ml-auto flex flex-col items-center gap-1">
+              <div className="flex items-center gap-1.5 rounded-xl border border-amber-800/50 bg-amber-950/20 px-4 py-2">
+                <Flame size={18} className="text-amber-400" />
+                <div className="text-center">
+                  <div className="text-xl font-bold text-amber-300 tabular-nums">
+                    {apiStats?.current_streak ?? 0}
+                  </div>
+                  <div className="text-[9px] text-amber-600">day streak</div>
+                </div>
+              </div>
+              <div className="text-[9px] text-slate-600 text-center">
+                Best: {apiStats?.longest_streak ?? 0} days
+              </div>
+              <div className="flex items-center gap-1 mt-1">
+                <Zap size={10} className="text-indigo-400" />
+                <span className="text-[10px] font-bold text-indigo-300">{apiStats?.xp ?? 0} XP</span>
+              </div>
             </div>
           </div>
         </div>
@@ -549,6 +671,30 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </div>
           )}
         </div>
+
+        {/* ── Interview Mode CTA ──────────────────────────────────────────── */}
+        {onEnterInterview && (
+          <div className="rounded-xl border border-red-900/40 bg-gradient-to-r from-red-950/30 to-slate-900/60 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-red-700 to-rose-600 flex items-center justify-center shadow-lg shadow-red-950/60">
+                  <Target size={16} className="text-white" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-slate-100">Zoho Interview Simulator</div>
+                  <div className="text-[10px] text-slate-400">Practice with Srinivasan — scored 0–10 using the STAR-T rubric</div>
+                </div>
+              </div>
+              <button
+                onClick={onEnterInterview}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-700 to-rose-600 px-4 py-2 text-xs font-bold text-white shadow-lg hover:from-red-600 hover:to-rose-500 transition-all group"
+              >
+                Enter Interview Mode
+                <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── System Info Footer ─────────────────────────────────────────── */}
         <div className="flex items-center justify-between text-[10px] text-slate-700 pb-2">

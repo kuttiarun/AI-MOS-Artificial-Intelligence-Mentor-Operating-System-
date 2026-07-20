@@ -78,6 +78,15 @@ class AnalogyPerformanceAggregate(Base):
     updated_at = sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now())
 
 
+class UserStreak(Base):
+    """Tracks daily learning streaks per user."""
+    __tablename__ = "user_streaks"
+    user_id = sa.Column("user_id", sa.UUID, primary_key=True)
+    current_streak = sa.Column("current_streak", sa.Integer, nullable=False, default=0)
+    longest_streak = sa.Column("longest_streak", sa.Integer, nullable=False, default=0)
+    last_active_date = sa.Column("last_active_date", sa.Date, nullable=True)
+
+
 
 # =============================================================================
 # Helper: Seed/Retrieve Test User
@@ -226,3 +235,43 @@ async def unlock_next_nodes(db: AsyncSession, user_id: UUID, completed_node_id: 
         unlocked_records.append(rec)
         
     return unlocked_records
+
+
+async def increment_streak(db: AsyncSession, user_id: UUID) -> UserStreak:
+    """Increments or resets user daily streak based on last active date."""
+    from datetime import date, timedelta
+    today = date.today()
+
+    stmt = select(UserStreak).where(UserStreak.user_id == user_id)
+    result = await db.execute(stmt)
+    streak = result.scalars().first()
+
+    if not streak:
+        streak = UserStreak(user_id=user_id, current_streak=1, longest_streak=1, last_active_date=today)
+        db.add(streak)
+        logger.info("Created new streak record for user %s (streak=1)", user_id)
+        return streak
+
+    if streak.last_active_date == today:
+        return streak  # already updated today
+
+    yesterday = today - timedelta(days=1)
+    if streak.last_active_date == yesterday:
+        streak.current_streak += 1
+    else:
+        streak.current_streak = 1  # streak broken
+
+    streak.last_active_date = today
+    streak.longest_streak = max(streak.longest_streak, streak.current_streak)
+    logger.info("Updated streak for user %s: current=%d, best=%d", user_id, streak.current_streak, streak.longest_streak)
+    return streak
+
+
+async def get_user_streak(db: AsyncSession, user_id: UUID) -> UserStreak:
+    """Returns the current streak record, or a default zero-streak if none exists."""
+    stmt = select(UserStreak).where(UserStreak.user_id == user_id)
+    result = await db.execute(stmt)
+    streak = result.scalars().first()
+    if not streak:
+        return UserStreak(user_id=user_id, current_streak=0, longest_streak=0, last_active_date=None)
+    return streak

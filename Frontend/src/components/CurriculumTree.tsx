@@ -32,6 +32,26 @@ const FALLBACK_ROADMAP: NodeItem[] = [
   { id: "java-collections-arraylist", title: "ArrayList Internals", phase: 3, status: "locked" },
   { id: "java-collections-linkedlist", title: "LinkedList Nodes", phase: 3, status: "locked" },
   { id: "java-collections-hashmap", title: "HashMap Buckets", phase: 3, status: "locked" },
+  // Phase 4: Java Advanced
+  { id: "java-advanced-exceptions", title: "Exception Handling", phase: 4, status: "locked" },
+  { id: "java-advanced-generics", title: "Generics & Wildcards", phase: 4, status: "locked" },
+  { id: "java-advanced-streams", title: "Streams API", phase: 4, status: "locked" },
+  { id: "java-advanced-lambda", title: "Lambda & Functional", phase: 4, status: "locked" },
+  { id: "java-advanced-concurrency", title: "Concurrency & Threads", phase: 4, status: "locked" },
+  { id: "java-advanced-jvm-memory", title: "JVM Memory & GC", phase: 4, status: "locked" },
+  // Phase 5: Testing
+  { id: "testing-junit5", title: "JUnit 5 Unit Tests", phase: 5, status: "locked" },
+  { id: "testing-mockito", title: "Mockito & Mocking", phase: 5, status: "locked" },
+  { id: "testing-integration", title: "Integration Testing", phase: 5, status: "locked" },
+  { id: "testing-tdd", title: "TDD Cycle", phase: 5, status: "locked" },
+  { id: "testing-coverage", title: "Test Coverage & JaCoCo", phase: 5, status: "locked" },
+  // Phase 6: Backend/Spring Boot
+  { id: "spring-intro", title: "Spring Boot Intro", phase: 6, status: "locked" },
+  { id: "spring-mvc", title: "Spring MVC & REST", phase: 6, status: "locked" },
+  { id: "spring-data-jpa", title: "Spring Data JPA", phase: 6, status: "locked" },
+  { id: "spring-rest-design", title: "REST API Design", phase: 6, status: "locked" },
+  { id: "spring-security", title: "Spring Security & JWT", phase: 6, status: "locked" },
+  { id: "spring-deployment", title: "Docker & Deployment", phase: 6, status: "locked" },
 ];
 
 export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
@@ -74,7 +94,20 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
     fetchProgress();
   }, [activeNodeId, fetchProgress]);
 
-  const phases = [1, 2, 3];
+  const phases = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+  const phaseConfig: Record<number, { label: string; color: string; dot: string }> = {
+    1: { label: "Foundations",       color: "text-slate-400",   dot: "bg-slate-500" },
+    2: { label: "Java Core",         color: "text-blue-400",    dot: "bg-blue-500" },
+    3: { label: "Collections & DS",  color: "text-indigo-400",  dot: "bg-indigo-500" },
+    4: { label: "Java Advanced",     color: "text-amber-400",   dot: "bg-amber-500" },
+    5: { label: "Testing",           color: "text-teal-400",    dot: "bg-teal-500" },
+    6: { label: "Backend / Spring",  color: "text-rose-400",    dot: "bg-rose-500" },
+    7: { label: "Build & Database",  color: "text-cyan-400",    dot: "bg-cyan-500" },
+    8: { label: "Design Patterns",   color: "text-purple-400",  dot: "bg-purple-500" },
+    9: { label: "System & Cloud",    color: "text-emerald-400", dot: "bg-emerald-500" },
+    10: { label: "DSA Interviews",   color: "text-orange-400",  dot: "bg-orange-500" },
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -142,35 +175,43 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
 
       {/* Nodes list */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
-        {phases.map((phase) => (
-          <div key={phase} className="space-y-1.5">
-            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">
-              Phase {phase}
-            </h4>
+        {phases.map((phase) => {
+          const phaseNodes = nodes.filter((node) => node.phase === phase);
+          if (phaseNodes.length === 0) return null;
+          const cfg = phaseConfig[phase];
+          return (
+            <div key={phase} className="space-y-1.5">
+              <div className="flex items-center gap-1.5 px-2">
+                <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+                <h4 className={`text-[9px] font-bold uppercase tracking-widest ${cfg.color}`}>
+                  Ph.{phase} — {cfg.label}
+                </h4>
+              </div>
 
-            <div className="space-y-1">
-              {nodes.filter((node) => node.phase === phase).map((node) => {
-                const isActive = node.id === activeNodeId;
-                const isLocked = node.status === "locked";
+              <div className="space-y-1">
+                {phaseNodes.map((node) => {
+                  const isActive = node.id === activeNodeId;
+                  const isLocked = node.status === "locked";
 
-                return (
-                  <button
-                    key={node.id}
-                    disabled={isLocked}
-                    onClick={() => onSelectNode(node.id)}
-                    className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-all ${getStatusStyle(
-                      node.status,
-                      isActive
-                    )}`}
-                  >
-                    {getStatusIcon(node.status)}
-                    <span className="truncate">{node.title}</span>
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={node.id}
+                      disabled={isLocked}
+                      onClick={() => onSelectNode(node.id)}
+                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-all ${getStatusStyle(
+                        node.status,
+                        isActive
+                      )}`}
+                    >
+                      {getStatusIcon(node.status)}
+                      <span className="truncate">{node.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -27,6 +27,7 @@ from app.services.progress import (
     unlock_next_nodes,
     resolve_weakness_record,
     record_validation_failure,
+    increment_streak,
     CurriculumNode,
     UserProgress,
 )
@@ -243,14 +244,10 @@ async def validate_node_submission(
         else:
             async with db.begin():
                 if passed:
-                    # Upgrading node to completed status
                     await upsert_user_progress(db, user_uuid, request.node_id, "completed", score)
-                    # Unlocking dependents/child nodes
                     unlocked_nodes = await unlock_next_nodes(db, user_uuid, request.node_id)
-                    # Resolving any active weaknesses on this topic
                     await resolve_weakness_record(db, user_uuid, request.node_id)
-                    
-                    # Determine next node to unlock (if any)
+                    await increment_streak(db, user_uuid)  # 🔥 update streak on success
                     next_node_id = unlocked_nodes[0].node_id if unlocked_nodes else None
                 else:
                     # Setting node to active studying state
