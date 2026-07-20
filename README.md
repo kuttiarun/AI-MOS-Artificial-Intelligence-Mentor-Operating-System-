@@ -193,7 +193,8 @@ This project is licensed under a **Custom Educational & Non-Commercial License**
 
 > [!CAUTION]
 > **LEGAL NOTICE FOR FORKS, CLONES, AND COPIES:**
-> This repository and its source code are public **strictly for free personal learning and educational use**. 
-> You are **not permitted** to sell, monetize, distribute, or bundle this code or products derived from it for monetary gain or commercial services. 
-> Any commercial use or attempt to sell this project for money will result in a **formal legal complaint, intellectual property infringement claims, and platform takedowns (such as DMCA)** filed by the owner (**Arun M**).
+> * **Educational Use Only:** This repository and its source code are public **strictly for free personal learning and educational use**. You are **not permitted** to sell, monetize, distribute, or bundle this code or products derived from it for monetary gain or commercial services.
+> * **Credits & Attribution Required:** If you fork, clone, copy, or modify this code for your own educational projects, you **must provide prominent credit and attribution to the original author (Arun M)** and link back to this original repository. You are strictly **forbidden from claiming ownership** of this project or presenting it as your own original creation.
+> * **Enforcement:** Any commercial exploitation or failure to provide proper attribution as required will result in a **formal legal complaint, intellectual property infringement claims, and platform takedowns (such as DMCA)** filed by the owner (**Arun M**).
+
 
