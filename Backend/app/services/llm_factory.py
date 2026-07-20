@@ -53,6 +53,14 @@ class LLMFactory:
         """
         provider = provider.strip().lower()
 
+        # Clean and validate API key to prevent sending invalid "Bearer " or empty headers
+        api_key_clean = api_key.strip()
+        if not api_key_clean:
+            raise HTTPException(
+                status_code=401,
+                detail="API key configuration is missing or empty. Please check your compute provider settings."
+            )
+
         if provider not in _PROVIDER_ENDPOINTS:
             supported = ", ".join(_PROVIDER_ENDPOINTS.keys())
             raise HTTPException(
@@ -63,7 +71,7 @@ class LLMFactory:
         if provider == "nvidia-nim":
             return LLMFactory._stream_openai_compatible(
                 endpoint=_PROVIDER_ENDPOINTS["nvidia-nim"],
-                api_key=api_key,
+                api_key=api_key_clean,
                 model=_DEFAULT_MODELS["nvidia-nim"],
                 user_msg=payload["user_message"],
                 system_prompt=system_prompt
@@ -72,7 +80,7 @@ class LLMFactory:
         elif provider == "openai":
             return LLMFactory._stream_openai_compatible(
                 endpoint=_PROVIDER_ENDPOINTS["openai"],
-                api_key=api_key,
+                api_key=api_key_clean,
                 model=_DEFAULT_MODELS["openai"],
                 user_msg=payload["user_message"],
                 system_prompt=system_prompt
@@ -81,7 +89,7 @@ class LLMFactory:
         elif provider == "google-gemini":
             return LLMFactory._stream_gemini(
                 endpoint=_PROVIDER_ENDPOINTS["google-gemini"],
-                api_key=api_key,
+                api_key=api_key_clean,
                 user_msg=payload["user_message"],
                 system_prompt=system_prompt
             )
@@ -89,7 +97,7 @@ class LLMFactory:
         elif provider == "anthropic":
             return LLMFactory._stream_anthropic(
                 endpoint=_PROVIDER_ENDPOINTS["anthropic"],
-                api_key=api_key,
+                api_key=api_key_clean,
                 model=_DEFAULT_MODELS["anthropic"],
                 user_msg=payload["user_message"],
                 system_prompt=system_prompt

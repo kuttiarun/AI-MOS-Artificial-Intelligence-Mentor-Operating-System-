@@ -129,7 +129,7 @@ function App() {
   if (!onboardingStatus) {
     return (
       <>
-        <OnboardingChat onComplete={handleOnboardingComplete} />
+        <OnboardingChat onComplete={handleOnboardingComplete} onOpenKeys={() => setIsKeysOpen(true)} />
         <BYOKModal isOpen={isKeysOpen} onClose={() => setIsKeysOpen(false)} />
       </>
     );

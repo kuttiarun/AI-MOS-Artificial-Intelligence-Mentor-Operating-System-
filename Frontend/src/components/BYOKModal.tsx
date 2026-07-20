@@ -77,7 +77,7 @@ export const BYOKModal: React.FC<BYOKModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md transition-opacity">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/80 backdrop-blur-md transition-opacity">
       <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
         <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
           <div className="rounded-lg bg-indigo-950 p-2 text-indigo-400">

@@ -9,6 +9,7 @@ interface OnboardingMessage {
 
 interface OnboardingChatProps {
   onComplete: () => void;
+  onOpenKeys?: () => void;
 }
 
 // ─── API Helpers ──────────────────────────────────────────────────────────────
@@ -34,7 +35,7 @@ function getAuthHeaders(): Record<string, string> {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function OnboardingChat({ onComplete }: OnboardingChatProps) {
+export function OnboardingChat({ onComplete, onOpenKeys }: OnboardingChatProps) {
   const [messages, setMessages] = useState<OnboardingMessage[]>([]);
   const [input, setInput] = useState("");
   const [turnNumber, setTurnNumber] = useState(0);
@@ -74,6 +75,14 @@ export function OnboardingChat({ onComplete }: OnboardingChatProps) {
 
   const handleSend = async () => {
     if (!input.trim() || isSending || isFinishing || turnNumber === 0) return;
+
+    // Client-side credentials check to prevent protocol errors
+    const headers = getAuthHeaders();
+    if (!headers["X-User-API-Key"]) {
+      setError("API key configuration is missing. Click the key icon in the top right to configure credentials.");
+      return;
+    }
+
     const userText = input.trim();
     setInput("");
     setError(null);
@@ -147,14 +156,29 @@ export function OnboardingChat({ onComplete }: OnboardingChatProps) {
       <div className={`onboarding-panel ${isFinishing ? "panel-completing" : ""}`}>
         {/* ── Header ── */}
         <div className="onboarding-header">
-          <div className="header-logo">
-            <div className={`activity-ring ${isSending ? "ring-active" : ""}`}>
-              <span className="logo-icon">⬡</span>
+          <div style={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "space-between" }}>
+            <div className="header-logo">
+              <div className={`activity-ring ${isSending ? "ring-active" : ""}`}>
+                <span className="logo-icon">⬡</span>
+              </div>
+              <div>
+                <h1 className="header-title">AI-MOS Diagnostic</h1>
+                <p className="header-subtitle">Building your personalized learning profile</p>
+              </div>
             </div>
-            <div>
-              <h1 className="header-title">AI-MOS Diagnostic</h1>
-              <p className="header-subtitle">Building your personalized learning profile</p>
-            </div>
+
+            {onOpenKeys && (
+              <button
+                onClick={onOpenKeys}
+                className="onboarding-key-btn"
+                title="Configure Compute API Keys"
+                type="button"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="onboarding-key-icon">
+                  <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Progress bar */}
@@ -343,6 +367,29 @@ export function OnboardingChat({ onComplete }: OnboardingChatProps) {
           padding: 22px 26px 16px;
           border-bottom: 1px solid rgba(99,102,241,0.15);
           flex-shrink: 0;
+        }
+        .onboarding-key-btn {
+          background: rgba(30, 41, 59, 0.7);
+          border: 1px solid rgba(99, 102, 241, 0.25);
+          color: #818cf8;
+          border-radius: 10px;
+          padding: 8px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          margin-bottom: 16px;
+        }
+        .onboarding-key-btn:hover {
+          background: rgba(99, 102, 241, 0.15);
+          border-color: rgba(99, 102, 241, 0.6);
+          box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+        }
+        .onboarding-key-icon {
+          width: 16px;
+          height: 16px;
         }
         .header-logo {
           display: flex; align-items: center; gap: 14px;

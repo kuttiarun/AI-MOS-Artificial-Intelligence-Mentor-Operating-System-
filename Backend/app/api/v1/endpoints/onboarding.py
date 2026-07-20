@@ -211,6 +211,8 @@ async def onboarding_chat_turn(
             system_prompt=system_prompt,
         )
         response_text = await LLMFactory.extract_content_from_stream(event_stream)
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as llm_exc:
         logger.error("LLM call failed during onboarding turn %d: %s", request.turn_number, str(llm_exc))
         raise HTTPException(
