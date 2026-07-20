@@ -12,6 +12,13 @@ Built around a **Bring Your Own Key (BYOK)**, stateless, decentralized backend g
 
 Follow these quick commands to spin up the complete local environment:
 
+### 0. Clone the Repository
+Clone the codebase to your local machine and navigate into the project directory:
+```bash
+git clone https://github.com/kuttiarun/AI-MOS-Artificial-Intelligence-Mentor-Operating-System-.git
+cd AI-MOS-Artificial-Intelligence-Mentor-Operating-System-
+```
+
 ### 1. Database (PostgreSQL)
 Ensure Docker Desktop is running, then launch the database container:
 ```bash
@@ -118,6 +125,13 @@ d:\AI-MOS Project
 ## 🚀 Local Development Setup
 
 To run this project on your system, follow the step-by-step guide below.
+
+### 0. Clone the Repository
+Start by cloning the repository to your local computer:
+```bash
+git clone https://github.com/kuttiarun/AI-MOS-Artificial-Intelligence-Mentor-Operating-System-.git
+cd AI-MOS-Artificial-Intelligence-Mentor-Operating-System-
+```
 
 ### 1. Database Setup
 Start the containerized PostgreSQL database:
