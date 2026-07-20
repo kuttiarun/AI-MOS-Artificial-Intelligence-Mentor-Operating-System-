@@ -187,5 +187,13 @@ We welcome contributions from developers! To contribute:
 
 ---
 
-## 📝 License
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+## 📝 License & Legal Warning
+
+This project is licensed under a **Custom Educational & Non-Commercial License**. See [LICENSE](LICENSE) for details.
+
+> [!CAUTION]
+> **LEGAL NOTICE FOR FORKS, CLONES, AND COPIES:**
+> This repository and its source code are public **strictly for free personal learning and educational use**. 
+> You are **not permitted** to sell, monetize, distribute, or bundle this code or products derived from it for monetary gain or commercial services. 
+> Any commercial use or attempt to sell this project for money will result in a **formal legal complaint, intellectual property infringement claims, and platform takedowns (such as DMCA)** filed by the owner (**Arun M**).
+
