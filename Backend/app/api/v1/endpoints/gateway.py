@@ -20,16 +20,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.schemas.gateway import ChatPayload
-from app.services.llm_factory import LLMFactory
-from app.services.knowledge_base import KnowledgeBaseService
-from app.services.prompt_compiler import PromptCompiler
-from app.services.progress import (
-    get_or_create_test_user,
-    get_user_node_progress,
-    get_node_weakness,
-    get_active_weak_areas,
-    get_curriculum_node,
-)
+from app.services.kernel import AimosKernel
+from app.services.progress import get_or_create_test_user
 
 logger = logging.getLogger(__name__)
 
@@ -96,54 +88,16 @@ async def stream_mentor_chat(
         user_uuid = await get_or_create_test_user(db)
 
     # -------------------------------------------------------------------------
-    # 2. Fetch Curriculum Node metadata (to get content_path)
+    # 2. Stream AI Response through central AI-MOS Kernel (Problem 2)
     # -------------------------------------------------------------------------
-    node = await get_curriculum_node(db, payload.current_node_id)
-    if not node:
-        logger.warning("Requested curriculum node not found in DB: %s", payload.current_node_id)
-        raise HTTPException(
-            status_code=404,
-            detail=f"Curriculum node '{payload.current_node_id}' does not exist."
-        )
-
-    # -------------------------------------------------------------------------
-    # 3. Load curriculum markdown content (Async with Caching)
-    # -------------------------------------------------------------------------
-    lesson_content = await KnowledgeBaseService.get_lesson_content(node.content_path)
-
-    # -------------------------------------------------------------------------
-    # 4. Fetch User State & Weaknesses from database
-    # -------------------------------------------------------------------------
-    # Get current node progress status & confidence
-    progress = await get_user_node_progress(db, user_uuid, payload.current_node_id)
-    confidence = progress.confidence_score if progress else 0
-
-    # Get failure count for the current node
-    weakness = await get_node_weakness(db, user_uuid, payload.current_node_id)
-    failures = weakness.failure_count if weakness else 0
-
-    # Get other active weaknesses to construct the struggles list
-    all_weaknesses = await get_active_weak_areas(db, user_uuid)
-
-    # -------------------------------------------------------------------------
-    # 5. Compile Prompt
-    # -------------------------------------------------------------------------
-    system_prompt = PromptCompiler.compile_system_prompt(
-        lesson_content=lesson_content,
+    event_stream = await AimosKernel.stream_socratic_chat(
+        db=db,
+        user_uuid=user_uuid,
         node_id=payload.current_node_id,
-        confidence_score=confidence,
-        failure_count=failures,
-        active_weaknesses=all_weaknesses,
-    )
-
-    # -------------------------------------------------------------------------
-    # 6. Contact upstream LLM & stream tokens
-    # -------------------------------------------------------------------------
-    event_stream = await LLMFactory.get_streaming_response(
+        payload=payload.model_dump(),
         provider=x_user_provider,
         api_key=x_user_api_key,
-        payload=payload.model_dump(),
-        system_prompt=system_prompt,
+        behavior_type="teaching"
     )
 
     async def event_stream_generator():
