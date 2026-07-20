@@ -45,10 +45,14 @@ export function OnboardingChat({ onComplete, onOpenKeys }: OnboardingChatProps) 
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const chatLogRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom whenever messages update
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const log = chatLogRef.current;
+    if (log) {
+      log.scrollTo({ top: log.scrollHeight, behavior: "smooth" });
+    }
   }, [messages, isLoading, isFinishing]);
 
   // On mount: call /start to get opening message
@@ -200,7 +204,7 @@ export function OnboardingChat({ onComplete, onOpenKeys }: OnboardingChatProps) 
         </div>
 
         {/* ── Chat Log ── */}
-        <div className="onboarding-chat-log">
+        <div ref={chatLogRef} className="onboarding-chat-log">
           {isLoading ? (
             <div className="loading-state">
               <div className="loading-dots">
@@ -338,12 +342,14 @@ export function OnboardingChat({ onComplete, onOpenKeys }: OnboardingChatProps) 
         .onboarding-panel {
           position: relative; z-index: 1;
           width: min(680px, 96vw);
-          max-height: 88vh;
+          height: min(680px, 85vh);
+          margin: auto;
           display: flex; flex-direction: column;
           background: rgba(15, 23, 42, 0.85);
           border: 1px solid rgba(99, 102, 241, 0.25);
           border-radius: 20px;
           backdrop-filter: blur(24px);
+          overflow: hidden;
           box-shadow:
             0 0 0 1px rgba(99,102,241,0.08),
             0 32px 80px rgba(0,0,0,0.6),
@@ -445,6 +451,7 @@ export function OnboardingChat({ onComplete, onOpenKeys }: OnboardingChatProps) 
           flex: 1; overflow-y: auto; padding: 20px 24px;
           display: flex; flex-direction: column; gap: 14px;
           scroll-behavior: smooth;
+          min-height: 0;
         }
         .onboarding-chat-log::-webkit-scrollbar { width: 4px; }
         .onboarding-chat-log::-webkit-scrollbar-track { background: transparent; }
