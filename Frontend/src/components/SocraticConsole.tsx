@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
-import { Send, Key, Cpu, AlertTriangle, Flame, Award } from "lucide-react";
+import { Send, Key, Cpu, AlertTriangle, Flame, Award, ChevronDown, ChevronRight, Info } from "lucide-react";
 import type { Message } from "../hooks/useLlmStream";
 
 interface SocraticConsoleProps {
@@ -13,6 +13,7 @@ interface SocraticConsoleProps {
   onSendMessage: (text: string) => void;
   onOpenKeys: () => void;
   activeNodeId: string;
+  weakAreaCount?: number;
 }
 
 export const SocraticConsole: React.FC<SocraticConsoleProps> = ({
@@ -22,9 +23,11 @@ export const SocraticConsole: React.FC<SocraticConsoleProps> = ({
   onSendMessage,
   onOpenKeys,
   activeNodeId,
+  weakAreaCount = 0,
 }) => {
   const [activeTab, setActiveTab] = useState<"socratic" | "interview">("socratic");
   const [input, setInput] = useState("");
+  const [contextInspectorOpen, setContextInspectorOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const interviewEndRef = useRef<HTMLDivElement>(null);
 
@@ -216,7 +219,40 @@ export const SocraticConsole: React.FC<SocraticConsoleProps> = ({
         </button>
       </div>
 
-      {/* Tab Contents: Socratic Mentor */}
+      {/* Context Inspector Badge */}
+      <div className="border-b border-slate-800 bg-slate-950/60 shrink-0">
+        <button
+          onClick={() => setContextInspectorOpen(o => !o)}
+          className="flex w-full items-center justify-between px-4 py-2 text-[10px] text-slate-500 hover:text-slate-300 transition-colors"
+        >
+          <div className="flex items-center gap-1.5">
+            <Info size={10} className="text-indigo-500" />
+            <span className="font-semibold uppercase tracking-wider">Context Inspector</span>
+          </div>
+          {contextInspectorOpen
+            ? <ChevronDown size={11} />
+            : <ChevronRight size={11} />}
+        </button>
+
+        {contextInspectorOpen && (
+          <div className="grid grid-cols-3 gap-px bg-slate-800 border-t border-slate-800">
+            <div className="bg-slate-950/80 px-3 py-2 space-y-0.5">
+              <div className="text-[9px] uppercase tracking-widest text-slate-600 font-semibold">Active Node</div>
+              <div className="text-[10px] font-mono text-indigo-400 truncate" title={activeNodeId}>{activeNodeId}</div>
+            </div>
+            <div className="bg-slate-950/80 px-3 py-2 space-y-0.5">
+              <div className="text-[9px] uppercase tracking-widest text-slate-600 font-semibold">Provider</div>
+              <div className="text-[10px] text-violet-400 truncate">{provider === "None" ? "Not set" : provider.toUpperCase()}</div>
+            </div>
+            <div className="bg-slate-950/80 px-3 py-2 space-y-0.5">
+              <div className="text-[9px] uppercase tracking-widest text-slate-600 font-semibold">Weak Areas</div>
+              <div className={`text-[10px] font-bold ${weakAreaCount > 0 ? "text-amber-400" : "text-emerald-400"}`}>
+                {weakAreaCount > 0 ? `${weakAreaCount} flagged` : "None detected"}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       {activeTab === "socratic" && (
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Chat Messages Log */}

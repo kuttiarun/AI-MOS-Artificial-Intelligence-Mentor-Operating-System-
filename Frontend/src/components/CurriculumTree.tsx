@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Lock, CheckCircle2, PlayCircle, BookOpen, RefreshCw } from "lucide-react";
+import { Lock, CheckCircle2, PlayCircle, BookOpen, RefreshCw, LayoutDashboard } from "lucide-react";
 
 export interface NodeItem {
   id: string;
@@ -11,6 +11,8 @@ export interface NodeItem {
 interface CurriculumTreeProps {
   activeNodeId: string;
   onSelectNode: (id: string) => void;
+  onGoHome: () => void;
+  isDashboardActive: boolean;
 }
 
 // Fallback roadmap used only when the backend is unreachable (dev offline mode)
@@ -35,6 +37,8 @@ const FALLBACK_ROADMAP: NodeItem[] = [
 export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
   activeNodeId,
   onSelectNode,
+  onGoHome,
+  isDashboardActive,
 }) => {
   const [nodes, setNodes] = useState<NodeItem[]>(FALLBACK_ROADMAP);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,6 +123,21 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
             <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} />
           </button>
         </div>
+      </div>
+
+      {/* Dashboard Home Button */}
+      <div className="px-3 pt-3 pb-1">
+        <button
+          onClick={onGoHome}
+          className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition-all ${
+            isDashboardActive
+              ? "bg-indigo-950/60 border border-indigo-700/50 text-indigo-300"
+              : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+          }`}
+        >
+          <LayoutDashboard size={14} className={isDashboardActive ? "text-indigo-400" : "text-slate-500"} />
+          <span>OS Dashboard</span>
+        </button>
       </div>
 
       {/* Nodes list */}
