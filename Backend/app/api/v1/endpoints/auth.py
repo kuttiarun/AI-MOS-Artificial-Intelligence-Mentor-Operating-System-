@@ -17,8 +17,10 @@ TODO (Phase 3 — Day 3):
 
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +48,19 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    message: str
+
+
+class GoogleAuthRequest(BaseModel):
+    email: EmailStr
+    name: str | None = None
+    picture: str | None = None
+
+
+class GoogleAuthResponse(BaseModel):
+    user_id: str
+    email: str
+    onboarding_complete: bool
     message: str
 
 
@@ -109,4 +124,55 @@ async def login(request: LoginRequest) -> TokenResponse:
             "⚠️ Phase 1 stub: Authentication not yet implemented. "
             "This endpoint will issue real JWT tokens in Phase 3."
         ),
+    )
+
+
+# =============================================================================
+# POST /google
+# =============================================================================
+@router.post(
+    "/google",
+    summary="Google Authentication Sign-In",
+    tags=["Authentication"],
+    response_model=GoogleAuthResponse,
+)
+async def google_auth(
+    request: GoogleAuthRequest,
+    db: AsyncSession = Depends(get_db),
+) -> GoogleAuthResponse:
+    """
+    Authenticates a user via Google OAuth (direct sandbox/mock flow).
+    """
+    from app.services.progress import User
+    from sqlalchemy import select
+    import uuid
+
+    # Check if user already exists
+    result = await db.execute(
+        select(User).where(User.email == request.email)
+    )
+    user = result.scalars().first()
+
+    if not user:
+        # Create new user for this Google account
+        user = User(
+            id=uuid.uuid4(),
+            email=request.email,
+            password_hash="pbkdf2:sha256:google_oauth_bypass",
+            target_role="Java Developer (Zoho)",
+            operating_system="Windows",
+            onboarding_complete=False,
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        message = f"New user registered via Google: {request.email}"
+    else:
+        message = f"Existing user authenticated via Google: {request.email}"
+
+    return GoogleAuthResponse(
+        user_id=str(user.id),
+        email=user.email,
+        onboarding_complete=user.onboarding_complete,
+        message=message,
     )

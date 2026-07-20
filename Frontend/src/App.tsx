@@ -5,6 +5,7 @@ import { SocraticConsole } from "./components/SocraticConsole";
 import { BYOKModal } from "./components/BYOKModal";
 import { OnboardingChat } from "./components/OnboardingChat";
 import { DashboardOverview } from "./components/DashboardOverview";
+import { LoginScreen } from "./components/LoginScreen";
 import { useLlmStream } from "./hooks/useLlmStream";
 import type { Message } from "./hooks/useLlmStream";
 import type { NodeItem } from "./components/CurriculumTree";
@@ -16,6 +17,7 @@ import type { NodeItem } from "./components/CurriculumTree";
 type OnboardingStatus = boolean | null;
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("aimos_user_id"));
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>(null);
   const [dashboardVisible, setDashboardVisible] = useState(false);
 
@@ -72,6 +74,11 @@ function App() {
 
   // ── 2. Check onboarding completion status ──────────────────────────────────
   useEffect(() => {
+    if (!isLoggedIn) {
+      // If not logged in, reset status to bypass loading spinners
+      setOnboardingStatus(false);
+      return;
+    }
     const userId = localStorage.getItem("aimos_user_id");
 
     fetch("http://localhost:8000/api/v1/onboarding/status", {
@@ -93,7 +100,7 @@ function App() {
         setTimeout(() => setDashboardVisible(true), 80);
         fetchNodes();
       });
-  }, [fetchNodes]);
+  }, [fetchNodes, isLoggedIn]);
 
   // ── 3. Initialize chat log with welcome prompt on node changes ────────────
   useEffect(() => {
@@ -165,6 +172,21 @@ function App() {
     // Small delay so the OnboardingChat finishing animation plays first
     setTimeout(() => setDashboardVisible(true), 400);
   };
+
+  // ── 9. Login success handler ──────────────────────────────────────────────
+  const handleLoginSuccess = (userId: string, email: string, onboardingComplete: boolean) => {
+    setIsLoggedIn(true);
+    setOnboardingStatus(onboardingComplete);
+    if (onboardingComplete) {
+      setTimeout(() => setDashboardVisible(true), 80);
+      fetchNodes();
+    }
+  };
+
+  // ── Render: Login Page ─────────────────────────────────────────────────────
+  if (!isLoggedIn) {
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
 
   // ── Render: Loading state ──────────────────────────────────────────────────
   if (onboardingStatus === null) {
