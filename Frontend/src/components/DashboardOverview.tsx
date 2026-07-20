@@ -27,6 +27,7 @@ import {
   Flame,
   Activity,
   Cpu,
+  HelpCircle,
 } from "lucide-react";
 import type { NodeItem } from "./CurriculumTree";
 
@@ -160,6 +161,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const [profile] = useState<ProfileData>(getProfileFromStorage);
   const [backendPing, setBackendPing] = useState<"checking" | "online" | "offline">("checking");
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showTutorial, setShowTutorial] = useState(!localStorage.getItem("aimos_hide_tutorial"));
+
+  const toggleTutorial = () => {
+    if (showTutorial) {
+      localStorage.setItem("aimos_hide_tutorial", "true");
+      setShowTutorial(false);
+    } else {
+      localStorage.removeItem("aimos_hide_tutorial");
+      setShowTutorial(true);
+    }
+  };
 
   // Ping backend health
   useEffect(() => {
@@ -222,17 +234,27 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           <div className="flex flex-col items-end gap-1.5">
-            <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-semibold border ${
-              backendPing === "online"
-                ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/50"
-                : backendPing === "offline"
-                  ? "bg-red-950/40 text-red-400 border-red-900/50"
-                  : "bg-slate-800/60 text-slate-500 border-slate-700/50"
-            }`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${
-                backendPing === "online" ? "bg-emerald-400 animate-pulse" : backendPing === "offline" ? "bg-red-400" : "bg-slate-500 animate-pulse"
-              }`} />
-              {backendPing === "online" ? "Core Services Online" : backendPing === "offline" ? "Backend Offline" : "Connecting…"}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleTutorial}
+                className="flex items-center gap-1 text-[9px] font-bold text-slate-400 hover:text-slate-200 border border-slate-800 rounded px-2 py-0.5 transition-all bg-slate-950/40"
+                title="Toggle Platform Help Guide"
+              >
+                <HelpCircle size={10} />
+                <span>{showTutorial ? "Hide Guide" : "Show Guide"}</span>
+              </button>
+              <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-semibold border ${
+                backendPing === "online"
+                  ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/50"
+                  : backendPing === "offline"
+                    ? "bg-red-400/10 text-red-400 border-red-900/30"
+                    : "bg-slate-800/60 text-slate-500 border-slate-700/50"
+              }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${
+                  backendPing === "online" ? "bg-emerald-400 animate-pulse" : backendPing === "offline" ? "bg-red-400" : "bg-slate-500 animate-pulse"
+                }`} />
+                {backendPing === "online" ? "Core Services Online" : backendPing === "offline" ? "Backend Offline" : "Connecting…"}
+              </div>
             </div>
             <span className="text-[10px] text-slate-600 tabular-nums">
               {currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
@@ -242,6 +264,61 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       </div>
 
       <div className="flex-1 px-6 py-5 space-y-6">
+
+        {/* ── Quick Start Guide Info Cards ─────────────────────────────────── */}
+        {showTutorial && (
+          <div className="rounded-xl border border-indigo-800/40 bg-slate-900/60 p-4 space-y-3 relative overflow-hidden transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Brain size={14} className="text-indigo-400" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                  Quick-Start Platform Utilities Guide
+                </h2>
+              </div>
+              <button
+                onClick={toggleTutorial}
+                className="text-[10px] text-slate-500 hover:text-slate-300 border border-slate-800 hover:border-slate-700 rounded px-2 py-0.5 transition-colors"
+              >
+                Hide Guide
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {/* Card 1: Navigation & Learning Path */}
+              <div className="rounded-lg border border-slate-800/80 bg-slate-950/40 p-3 space-y-1.5 hover:border-indigo-500/30 transition-all hover:scale-[1.01]">
+                <div className="flex items-center gap-1.5 text-indigo-400 font-semibold text-xs">
+                  <LayoutDashboard size={13} />
+                  <span>1. Navigation & Path</span>
+                </div>
+                <p className="text-[10px] text-slate-300 leading-relaxed">
+                  Click any unlocked node in the left learning path to start. Review first-principles content, stories, and real-world analogies.
+                </p>
+              </div>
+
+              {/* Card 2: Socratic Chat Console */}
+              <div className="rounded-lg border border-slate-800/80 bg-slate-950/40 p-3 space-y-1.5 hover:border-violet-500/30 transition-all hover:scale-[1.01]">
+                <div className="flex items-center gap-1.5 text-violet-400 font-semibold text-xs">
+                  <Brain size={13} />
+                  <span>2. Socratic Chat & Code Ban</span>
+                </div>
+                <p className="text-[10px] text-slate-300 leading-relaxed">
+                  Discuss checkpoints in the Socratic chat console. If you fail understanding gates, our **Research Coach** locks code blocks to force muscle-memory typing!
+                </p>
+              </div>
+
+              {/* Card 3: Srinivasan Interview Simulator */}
+              <div className="rounded-lg border border-slate-800/80 bg-slate-950/40 p-3 space-y-1.5 hover:border-amber-500/30 transition-all hover:scale-[1.01]">
+                <div className="flex items-center gap-1.5 text-amber-400 font-semibold text-xs">
+                  <Target size={13} />
+                  <span>3. Zoho Srinivasan Panel</span>
+                </div>
+                <p className="text-[10px] text-slate-300 leading-relaxed">
+                  Toggle the tab in the right console to simulate a real, high-pressure Zoho mock interview. Get scored out of 10 and view active weaknesses.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Student Profile Banner ─────────────────────────────────────── */}
         <div className="rounded-xl border border-slate-800 bg-gradient-to-r from-slate-900/80 to-indigo-950/20 p-4">
