@@ -117,7 +117,11 @@ export function OnboardingChat({ onComplete, onOpenKeys }: OnboardingChatProps) 
 
       const data = await res.json();
 
-        if (data.is_complete) {
+      if (data.user_id) {
+        localStorage.setItem("aimos_user_id", data.user_id);
+      }
+
+      if (data.is_complete) {
         // Turn 5 complete — show Mission Brief then unlock dashboard
         setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
         setIsFinishing(true);

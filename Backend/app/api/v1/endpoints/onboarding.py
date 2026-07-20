@@ -69,6 +69,7 @@ class OnboardingChatResponse(BaseModel):
     turn_number: int
     is_complete: bool = Field(..., description="True on turn 5 after profile is committed.")
     profile_matrix: dict | None = Field(None, description="Extracted profile on final turn only.")
+    user_id: str | None = Field(None, description="Persisted student user ID.")
 
 
 class OnboardingStatusResponse(BaseModel):
@@ -316,6 +317,7 @@ async def onboarding_chat_turn(
             turn_number=5,
             is_complete=True,
             profile_matrix=profile_matrix,
+            user_id=str(user_uuid),
         )
 
     # -------------------------------------------------------------------------
@@ -326,6 +328,7 @@ async def onboarding_chat_turn(
         turn_number=request.turn_number,
         is_complete=False,
         profile_matrix=None,
+        user_id=str(user_uuid),
     )
 
 
