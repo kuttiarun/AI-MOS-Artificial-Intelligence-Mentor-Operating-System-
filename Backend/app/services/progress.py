@@ -173,10 +173,17 @@ async def upsert_user_progress(
 
 
 async def record_validation_failure(db: AsyncSession, user_id: UUID, node_id: str) -> WeakArea:
-    existing = await get_node_weakness(db, user_id, node_id)
+    stmt = select(WeakArea).where(
+        WeakArea.user_id == user_id,
+        WeakArea.node_id == node_id
+    )
+    result = await db.execute(stmt)
+    existing = result.scalars().first()
+
     if existing:
         existing.failure_count += 1
-        logger.info("Incremented failure_count for user %s on node %s to %d", user_id, node_id, existing.failure_count)
+        existing.review_status = "active"
+        logger.info("Incremented and reactivated failure_count for user %s on node %s to %d", user_id, node_id, existing.failure_count)
         return existing
     else:
         new_weakness = WeakArea(
